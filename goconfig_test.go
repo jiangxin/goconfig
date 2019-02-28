@@ -18,10 +18,11 @@ func TestDanyel(t *testing.T) {
 	config, lineno, err := Parse(bytes)
 	assert.Equal(t, nil, err)
 	assert.Equal(t, 10, int(lineno))
-	assert.Equal(t, "Danyel Bayraktar", config["user.name"])
-	assert.Equal(t, "cydrop@gmail.com", config["user.email"])
-	assert.Equal(t, "subl -w", config["core.editor"])
-	assert.Equal(t, `!git config --get-regexp 'alias.*' | colrm 1 6 | sed 's/[ ]/ = /' | sort`, config["alias.aliases"])
+	_ = config
+	assert.Equal(t, "Danyel Bayraktar", config.Get("user.name"))
+	assert.Equal(t, "cydrop@gmail.com", config.Get("user.email"))
+	assert.Equal(t, "subl -w", config.Get("core.editor"))
+	assert.Equal(t, `!git config --get-regexp 'alias.*' | colrm 1 6 | sed 's/[ ]/ = /' | sort`, config.Get("alias.aliases"))
 }
 
 func TestInvalidKey(t *testing.T) {
@@ -29,7 +30,7 @@ func TestInvalidKey(t *testing.T) {
 	config, lineno, err := Parse([]byte(invalidConfig))
 	assert.Equal(t, ErrInvalidKeyChar, err)
 	assert.Equal(t, 1, int(lineno))
-	assert.Equal(t, map[string]string{}, config)
+	assert.Equal(t, NewGitConfig(), config)
 }
 
 func TestNoNewLine(t *testing.T) {
@@ -37,7 +38,9 @@ func TestNoNewLine(t *testing.T) {
 	config, lineno, err := Parse([]byte(validConfig))
 	assert.Equal(t, nil, err)
 	assert.Equal(t, 1, int(lineno))
-	assert.Equal(t, map[string]string{"user.name": "Danyel"}, config)
+	expect := NewGitConfig()
+	expect.Add("user.name", "Danyel")
+	assert.Equal(t, expect, config)
 }
 
 func TestUpperCaseKey(t *testing.T) {
@@ -45,7 +48,8 @@ func TestUpperCaseKey(t *testing.T) {
 	config, lineno, err := Parse([]byte(validConfig))
 	assert.Equal(t, nil, err)
 	assert.Equal(t, 3, int(lineno))
-	expect := map[string]string{"core.quotepath": "false"}
+	expect := NewGitConfig()
+	expect.Add("core.quotepath", "false")
 	assert.Equal(t, expect, config)
 }
 
@@ -54,7 +58,9 @@ func TestExtended(t *testing.T) {
 	config, lineno, err := Parse([]byte(validConfig))
 	assert.Equal(t, nil, err)
 	assert.Equal(t, 1, int(lineno))
-	assert.Equal(t, map[string]string{`http.https://my-website.com.sslverify`: "false"}, config)
+	expect := NewGitConfig()
+	expect.Add("http.https://my-website.com.sslverify", "false")
+	assert.Equal(t, expect, config)
 }
 
 func ExampleParse() {
@@ -70,8 +76,8 @@ func ExampleParse() {
 	}
 	fmt.Println()
 	fmt.Println(lineno)
-	fmt.Println(config["user.name"])
-	fmt.Println(config["user.email"])
+	fmt.Println(config.Get("user.name"))
+	fmt.Println(config.Get("user.email"))
 	// Output:
 	// 10
 	// Danyel Bayraktar

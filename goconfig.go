@@ -9,16 +9,16 @@ type parser struct {
 }
 
 // Parse takes given bytes as configuration file (according to gitconfig syntax)
-func Parse(bytes []byte) (map[string]string, uint, error) {
+func Parse(bytes []byte) (GitConfig, uint, error) {
 	parser := &parser{bytes, 1, false}
 	cfg, err := parser.parse()
 	return cfg, parser.linenr, err
 }
 
-func (cf *parser) parse() (map[string]string, error) {
+func (cf *parser) parse() (GitConfig, error) {
 	bomPtr := 0
 	comment := false
-	cfg := map[string]string{}
+	cfg := NewGitConfig()
 	name := ""
 	var err error
 	for {
@@ -54,18 +54,17 @@ func (cf *parser) parse() (map[string]string, error) {
 			if err != nil {
 				return cfg, err
 			}
-			name += "."
 			continue
 		}
 		if !isalpha(c) {
 			return cfg, ErrInvalidKeyChar
 		}
-		key := name + string(lower(c))
+		key := string(lower(c))
 		value, err := cf.getValue(&key)
 		if err != nil {
 			return cfg, err
 		}
-		cfg[key] = value
+		cfg._add(name, key, value)
 	}
 }
 
