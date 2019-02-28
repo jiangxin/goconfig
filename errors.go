@@ -32,3 +32,6 @@ var ErrMissingStartQuote = errors.New("missing start quote")
 
 // ErrMissingClosingBracket indicates that there was a missing closing bracket in section
 var ErrMissingClosingBracket = errors.New("missing closing section bracket")
+
+// ErrNotBoolValue indicates fail to convert config variable to bool
+var ErrNotBoolValue = errors.New("not a bool value")
