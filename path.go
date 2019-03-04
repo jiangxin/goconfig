@@ -1,10 +1,16 @@
 package goconfig
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
+)
+
+const (
+	gitSystemConfigEnv = "TEST_GIT_SYSTEM_CONFIG"
 )
 
 func homeDir() (string, error) {
@@ -27,6 +33,25 @@ func homeDir() (string, error) {
 	}
 
 	return home, nil
+}
+
+func xdgConfigHome(file string) (string, error) {
+	var (
+		home string
+		err  error
+	)
+
+	home = os.Getenv("XDG_CONFIG_HOME")
+	if home != "" {
+		return filepath.Join(home, "git", file), nil
+	}
+
+	home, err = homeDir()
+	if err != nil {
+		return "", err
+	}
+
+	return filepath.Join(home, ".config", "git", file), nil
 }
 
 func expendHome(name string) (string, error) {
@@ -72,4 +97,122 @@ func AbsJoin(dir, name string) (string, error) {
 	}
 
 	return Abs(filepath.Join(dir, name))
+}
+
+func isGitDir(dir string) bool {
+	var (
+		err error
+		fi  os.FileInfo
+	)
+
+	objectDir := filepath.Join(dir, "objects", "pack")
+	if fi, err = os.Stat(objectDir); err != nil || !fi.IsDir() {
+		return false
+	}
+
+	refsDir := filepath.Join(dir, "refs")
+	if fi, err = os.Stat(refsDir); err != nil || !fi.IsDir() {
+		return false
+	}
+
+	cfgFile := filepath.Join(dir, "config")
+	if fi, err = os.Stat(cfgFile); err != nil || fi.IsDir() {
+		return false
+	}
+
+	return true
+}
+
+func findGitDir(dir string) (string, error) {
+	var err error
+
+	dir, err = Abs(dir)
+	if err != nil {
+		return "", err
+	}
+
+	for {
+		// Check if is in a bare repo
+		if isGitDir(dir) {
+			return dir, nil
+		}
+
+		// Check .git
+		gitdir := filepath.Join(dir, ".git")
+		fi, err := os.Stat(gitdir)
+		if err != nil {
+			// Test parent dir
+			oldDir := dir
+			dir = filepath.Dir(dir)
+			if oldDir == dir {
+				break
+			}
+			continue
+		} else if fi.IsDir() {
+			if isGitDir(gitdir) {
+				return gitdir, nil
+			}
+			return "", fmt.Errorf("corrupt git dir: %s", gitdir)
+		} else {
+			f, err := os.Open(gitdir)
+			if err != nil {
+				return "", fmt.Errorf("cannot open gitdir file '%s'", gitdir)
+			}
+			defer f.Close()
+			reader := bufio.NewReader(f)
+			line, err := reader.ReadString('\n')
+			if strings.HasPrefix(line, "gitdir:") {
+				realgit := strings.TrimSpace(strings.TrimPrefix(line, "gitdir:"))
+				if !filepath.IsAbs(realgit) {
+					realgit, err = AbsJoin(filepath.Dir(gitdir), realgit)
+					if err != nil {
+						return "", err
+					}
+				}
+				if isGitDir(realgit) {
+					return realgit, nil
+				}
+				return "", fmt.Errorf("gitdir '%s' points to corrupt git repo: %s", gitdir, realgit)
+			}
+			return "", fmt.Errorf("bad gitdir file '%s'", gitdir)
+		}
+	}
+	return "", nil
+}
+
+func findGitConfig(dir string) (string, error) {
+	dir, err := findGitDir(dir)
+	if err == nil && dir != "" {
+		return filepath.Join(dir, "config"), nil
+	}
+	return "", err
+}
+
+func systemConfigFile() string {
+	file := os.Getenv(gitSystemConfigEnv)
+	if file == "" {
+		file = "/etc/gitconfig"
+	}
+	return file
+}
+
+func globalConfigFile() (string, error) {
+	var (
+		file string
+		err  error
+	)
+
+	file, err = xdgConfigHome("config")
+	if err != nil {
+		return "", err
+	}
+
+	// xdg config not exist, use ~/.gitconfig
+	if _, err := os.Stat(file); err != nil {
+		file, err = expendHome(".gitconfig")
+		if err != nil {
+			return "", err
+		}
+	}
+	return file, nil
 }
