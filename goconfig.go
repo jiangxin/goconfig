@@ -1,16 +1,32 @@
 package goconfig
 
-const utf8BOM = "\357\273\277"
+import (
+	"fmt"
+	"io/ioutil"
+	"path"
+)
+
+const (
+	utf8BOM         = "\357\273\277"
+	maxIncludeDepth = 10
+)
 
 type parser struct {
-	bytes  []byte
-	linenr uint
-	eof    bool
+	bytes    []byte
+	linenr   uint
+	eof      bool
+	filename string
+	depth    int
 }
 
 // Parse takes given bytes as configuration file (according to gitconfig syntax)
-func Parse(bytes []byte) (GitConfig, uint, error) {
-	parser := &parser{bytes, 1, false}
+func Parse(bytes []byte, filename string) (GitConfig, uint, error) {
+	return runParse(bytes, filename, 1)
+}
+
+func runParse(bytes []byte, filename string, depth int) (GitConfig, uint, error) {
+	parser := &parser{bytes, 1, false, filename, depth}
+
 	cfg, err := parser.parse()
 	return cfg, parser.linenr, err
 }
@@ -65,6 +81,31 @@ func (cf *parser) parse() (GitConfig, error) {
 			return cfg, err
 		}
 		cfg._add(name, key, value)
+		if name == "include" && key == "path" {
+			file, err := AbsJoin(path.Dir(cf.filename), value)
+			if err != nil {
+				return nil, err
+			}
+			// Check circular includes
+			if cf.depth >= maxIncludeDepth {
+				return nil, fmt.Errorf("exceeded maximum include depth (%d) while including\n"+
+					"\t%s\n"+
+					"from"+
+					"\t%s\n"+
+					"This might be due to circular includes\n",
+					maxIncludeDepth,
+					cf.filename,
+					file)
+			}
+			bytes, err := ioutil.ReadFile(file)
+			if err == nil {
+				config, _, err := runParse(bytes, file, cf.depth+1)
+				if err != nil {
+					return cfg, err
+				}
+				cfg.Merge(config)
+			}
+		}
 	}
 }
 

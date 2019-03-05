@@ -15,7 +15,7 @@ func TestDanyel(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Reading file %v failed", filename)
 	}
-	config, lineno, err := Parse(bytes)
+	config, lineno, err := Parse(bytes, filename)
 	assert.Equal(t, nil, err)
 	assert.Equal(t, 10, int(lineno))
 	_ = config
@@ -27,7 +27,7 @@ func TestDanyel(t *testing.T) {
 
 func TestInvalidKey(t *testing.T) {
 	invalidConfig := ".name = Danyel"
-	config, lineno, err := Parse([]byte(invalidConfig))
+	config, lineno, err := Parse([]byte(invalidConfig), "")
 	assert.Equal(t, ErrInvalidKeyChar, err)
 	assert.Equal(t, 1, int(lineno))
 	assert.Equal(t, NewGitConfig(), config)
@@ -35,7 +35,7 @@ func TestInvalidKey(t *testing.T) {
 
 func TestNoNewLine(t *testing.T) {
 	validConfig := "[user] name = Danyel"
-	config, lineno, err := Parse([]byte(validConfig))
+	config, lineno, err := Parse([]byte(validConfig), "")
 	assert.Equal(t, nil, err)
 	assert.Equal(t, 1, int(lineno))
 	expect := NewGitConfig()
@@ -45,7 +45,7 @@ func TestNoNewLine(t *testing.T) {
 
 func TestUpperCaseKey(t *testing.T) {
 	validConfig := "[core]\nQuotePath = false\n"
-	config, lineno, err := Parse([]byte(validConfig))
+	config, lineno, err := Parse([]byte(validConfig), "")
 	assert.Equal(t, nil, err)
 	assert.Equal(t, 3, int(lineno))
 	expect := NewGitConfig()
@@ -55,7 +55,7 @@ func TestUpperCaseKey(t *testing.T) {
 
 func TestExtended(t *testing.T) {
 	validConfig := `[http "https://my-website.com"] sslVerify = false`
-	config, lineno, err := Parse([]byte(validConfig))
+	config, lineno, err := Parse([]byte(validConfig), "")
 	assert.Equal(t, nil, err)
 	assert.Equal(t, 1, int(lineno))
 	expect := NewGitConfig()
@@ -70,7 +70,7 @@ func ExampleParse() {
 		log.Fatalf("Couldn't read file %v\n", gitconfig)
 	}
 
-	config, lineno, err := Parse(bytes)
+	config, lineno, err := Parse(bytes, gitconfig)
 	if err != nil {
 		log.Fatalf("Error on line %d: %v\n", lineno, err)
 	}
@@ -93,6 +93,6 @@ func BenchmarkParse(b *testing.B) {
 
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		Parse(bytes)
+		Parse(bytes, gitconfig)
 	}
 }
