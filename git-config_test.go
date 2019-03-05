@@ -12,7 +12,7 @@ func TestInvalidSectionName(t *testing.T) {
 	data := `# The following section name should have quote, like: [a "b"]
 [a b]
 	c = d`
-	_, lineno, err := Parse([]byte(data))
+	_, lineno, err := Parse([]byte(data), "filename")
 	assert.Equal(ErrMissingStartQuote, err)
 	assert.Equal(uint(2), lineno)
 }
@@ -23,7 +23,7 @@ func TestInvalidKeyWithSpace(t *testing.T) {
 	data := `# keys should not have spaces
 [a]
 	b c = d`
-	_, lineno, err := Parse([]byte(data))
+	_, lineno, err := Parse([]byte(data), "filename")
 	assert.Equal(ErrInvalidKeyChar, err)
 	assert.Equal(uint(3), lineno)
 }
@@ -37,7 +37,7 @@ func TestParseSectionWithSpaces1(t *testing.T) {
 	value3  = a \"quote
 [remote "hello world"]
 	url = test`
-	cfg, _, err := Parse([]byte(data))
+	cfg, _, err := Parse([]byte(data), "filename")
 	assert.Nil(err)
 	assert.Equal("x", cfg.Get("ab.cd.value1"))
 	assert.Equal("x y", cfg.Get("ab.cd.value2"))
@@ -49,7 +49,7 @@ func TestParseSectionWithSpaces2(t *testing.T) {
 
 	data := `[remote "hello world"]
 	url = test`
-	cfg, _, err := Parse([]byte(data))
+	cfg, _, err := Parse([]byte(data), "filename")
 	assert.Nil(err)
 	assert.Equal("test", cfg.Get("remote.hello world.url"))
 	assert.Equal("test", cfg.Get(`remote."hello world".url`))
@@ -64,7 +64,7 @@ func TestGetAll(t *testing.T) {
 	url = https://example.com/my/repo.git
 	fetch = +refs/heads/*:refs/remotes/origin/*
 	fetch = +refs/tags/*:refs/tags/*`
-	cfg, _, err := Parse([]byte(data))
+	cfg, _, err := Parse([]byte(data), "filename")
 	assert.Nil(err)
 	assert.Equal("+refs/tags/*:refs/tags/*", cfg.Get("remote.origin.fetch"))
 	assert.Equal([]string{
@@ -87,7 +87,7 @@ func TestGetBool(t *testing.T) {
 	x1 = 1
 	x2 = nothing`
 
-	cfg, _, err := Parse([]byte(data))
+	cfg, _, err := Parse([]byte(data), "filename")
 	assert.Nil(err)
 
 	v, err := cfg.GetBool("a.t1", false)
@@ -137,7 +137,7 @@ func TestGetInt(t *testing.T) {
 	i2 = 100
 	i3 = abc`
 
-	cfg, _, err := Parse([]byte(data))
+	cfg, _, err := Parse([]byte(data), "filename")
 	assert.Nil(err)
 
 	v1, err := cfg.GetInt("a.i1", 0)
@@ -158,4 +158,36 @@ func TestGetInt(t *testing.T) {
 	v4, err := cfg.GetInt("a.i4", 6700)
 	assert.Nil(err)
 	assert.Equal(6700, v4)
+}
+
+func TestMerge(t *testing.T) {
+	assert := assert.New(t)
+
+	data := `[a]
+	b = value-b
+	c = value-c`
+
+	cfg, _, err := Parse([]byte(data), "filename")
+	assert.Nil(err)
+
+	assert.Equal("value-b", cfg.Get("a.b"))
+	assert.Equal("value-c", cfg.Get("a.c"))
+
+	data = `[a]
+	c = other-c
+	d = other-d`
+
+	cfg2, _, err := Parse([]byte(data), "filename")
+	assert.Nil(err)
+	assert.Equal("other-c", cfg2.Get("a.c"))
+	assert.Equal("other-d", cfg2.Get("a.d"))
+
+	cfg.Merge(cfg2)
+	assert.Equal("value-b", cfg.Get("a.b"))
+	assert.Equal("other-c", cfg.Get("a.c"))
+	assert.Equal("other-d", cfg.Get("a.d"))
+	assert.Equal([]string{
+		"value-c",
+		"other-c",
+	}, cfg.GetAll("a.c"))
 }

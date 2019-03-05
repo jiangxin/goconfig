@@ -138,3 +138,20 @@ func toSectionKey(name string) (string, string) {
 	section := strings.Join(items[0:len(items)-1], ".")
 	return section, key
 }
+
+// Merge will merge another GitConfig, and new value(s) of the same key will
+// append to the end of value list, and new value has higher priority.
+func (v GitConfig) Merge(c GitConfig) GitConfig {
+	for sec, keys := range c {
+		if _, ok := v[sec]; !ok {
+			v[sec] = make(GitConfigKeys)
+		}
+		for key, values := range keys {
+			if v[sec][key] == nil {
+				v[sec][key] = []string{}
+			}
+			v[sec][key] = append(v[sec][key], values...)
+		}
+	}
+	return v
+}
