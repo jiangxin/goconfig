@@ -1,6 +1,7 @@
 package goconfig
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -182,7 +183,7 @@ func TestMerge(t *testing.T) {
 	assert.Equal("other-c", cfg2.Get("a.c"))
 	assert.Equal("other-d", cfg2.Get("a.d"))
 
-	cfg.Merge(cfg2)
+	cfg.Merge(cfg2, ScopeInclude)
 	assert.Equal("value-b", cfg.Get("a.b"))
 	assert.Equal("other-c", cfg.Get("a.c"))
 	assert.Equal("other-d", cfg.Get("a.d"))
@@ -190,4 +191,57 @@ func TestMerge(t *testing.T) {
 		"value-c",
 		"other-c",
 	}, cfg.GetAll("a.c"))
+}
+
+func TestScope(t *testing.T) {
+	assert := assert.New(t)
+	assert.Equal(0x1, ScopeInclude)
+	assert.Equal(^0x1, ScopeMask)
+}
+
+func ExampleMerge() {
+	sys := NewGitConfig()
+	sys.Add("sect1.Name1", "value-1.1.1")
+	sys.Add("sect1.Name2", "value-1.1.2")
+
+	inc1 := NewGitConfig()
+	inc1.Add("sect1.Name3", "value-0.1.3")
+	inc1.Add("sect2.name1", "value-0.2.1")
+
+	sys.Merge(inc1, ScopeInclude)
+
+	global := NewGitConfig()
+	global.Add("sect1.name2", "value-2.1.2")
+	global.Add("sect1.name3", "value-2.1.3")
+	global.Add("sect1.name4", "value-2.1.4")
+	global.Add("sect3.name1", "value-2.3.1")
+
+	repo := NewGitConfig()
+	repo.Add("sect1.name2", "value-3.1.2")
+	repo.Add("sect1.name3", "value-3.1.3")
+	repo.Add("sect1.name4", "value-3.1.4")
+
+	all := NewGitConfig()
+	all.Merge(sys, ScopeSystem)
+	all.Merge(global, ScopeGlobal)
+	all.Merge(repo, ScopeSelf)
+
+	fmt.Println()
+	for _, k := range all.Keys() {
+		for _, value := range all.GetRaw(k) {
+			fmt.Printf("%s = %-8s (%s)\n", k, value.Value(), value.Scope())
+		}
+	}
+	// Output:
+	// sect1.name1 = value-1.1.1 (system)
+	// sect1.name2 = value-1.1.2 (system)
+	// sect1.name2 = value-2.1.2 (global)
+	// sect1.name2 = value-3.1.2 (self)
+	// sect1.name3 = value-0.1.3 (system-inc)
+	// sect1.name3 = value-2.1.3 (global)
+	// sect1.name3 = value-3.1.3 (self)
+	// sect1.name4 = value-2.1.4 (global)
+	// sect1.name4 = value-3.1.4 (self)
+	// sect2.name1 = value-0.2.1 (system-inc)
+	// sect3.name1 = value-2.3.1 (global)
 }

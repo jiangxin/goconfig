@@ -1,15 +1,69 @@
 package goconfig
 
 import (
+	"sort"
 	"strconv"
 	"strings"
 )
+
+// Scope is used to mark where config variable comes from
+type Scope int
+
+// Define scopes for config variables
+const (
+	ScopeInclude = 1 << iota
+	ScopeSystem
+	ScopeGlobal
+	ScopeSelf
+
+	ScopeAll  = 0xFFFF
+	ScopeMask = ^ScopeInclude
+)
+
+// String show user friendly display of scope
+func (v *Scope) String() string {
+	i := int(*v)
+	inc := ""
+	if i&ScopeInclude == ScopeInclude {
+		inc = "-inc"
+	}
+
+	if i&ScopeSystem == ScopeSystem {
+		return "system" + inc
+	} else if i&ScopeGlobal == ScopeGlobal {
+		return "global" + inc
+	} else if i&ScopeSelf == ScopeSelf {
+		return "self" + inc
+	}
+	return "unknown" + inc
+}
 
 // GitConfig maps section to key-value pairs
 type GitConfig map[string]GitConfigKeys
 
 // GitConfigKeys maps key to values
-type GitConfigKeys map[string][]string
+type GitConfigKeys map[string][]*GitConfigValue
+
+// GitConfigValue holds value and its scope
+type GitConfigValue struct {
+	scope Scope
+	value string
+}
+
+// Set is used to set value
+func (v *GitConfigValue) Set(value string) {
+	v.value = value
+}
+
+// Value is used to show value
+func (v *GitConfigValue) Value() string {
+	return v.value
+}
+
+// Scope is used to show user friendly scope
+func (v *GitConfigValue) Scope() string {
+	return v.scope.String()
+}
 
 // NewGitConfig returns GitConfig with initialized maps
 func NewGitConfig() GitConfig {
@@ -25,6 +79,7 @@ func (v GitConfig) Keys() []string {
 			allKeys = append(allKeys, s+"."+key)
 		}
 	}
+	sort.Strings(allKeys)
 	return allKeys
 }
 
@@ -42,9 +97,9 @@ func (v GitConfig) _add(section, key, value string) {
 	}
 
 	if _, ok := v[section][key]; !ok {
-		v[section][key] = []string{}
+		v[section][key] = []*GitConfigValue{}
 	}
-	v[section][key] = append(v[section][key], value)
+	v[section][key] = append(v[section][key], &GitConfigValue{value: value})
 }
 
 // Get value from key
@@ -106,9 +161,25 @@ func (v GitConfig) GetUint64(key string, defaultValue uint64) (uint64, error) {
 func (v GitConfig) GetAll(key string) []string {
 	section, key := toSectionKey(key)
 
-	keys := v[section]
-	if keys != nil {
-		return keys[key]
+	values := []string{}
+
+	if v[section] != nil && v[section][key] != nil {
+		for _, value := range v[section][key] {
+			if value != nil {
+				values = append(values, value.value)
+			}
+		}
+		return values
+	}
+	return nil
+}
+
+// GetRaw gets all values of a key
+func (v GitConfig) GetRaw(key string) []*GitConfigValue {
+	section, key := toSectionKey(key)
+
+	if v[section] != nil && v[section][key] != nil {
+		return v[section][key]
 	}
 	return nil
 }
@@ -141,16 +212,26 @@ func toSectionKey(name string) (string, string) {
 
 // Merge will merge another GitConfig, and new value(s) of the same key will
 // append to the end of value list, and new value has higher priority.
-func (v GitConfig) Merge(c GitConfig) GitConfig {
+func (v GitConfig) Merge(c GitConfig, scope Scope) GitConfig {
 	for sec, keys := range c {
 		if _, ok := v[sec]; !ok {
 			v[sec] = make(GitConfigKeys)
 		}
 		for key, values := range keys {
 			if v[sec][key] == nil {
-				v[sec][key] = []string{}
+				v[sec][key] = []*GitConfigValue{}
 			}
-			v[sec][key] = append(v[sec][key], values...)
+			for _, value := range values {
+				if value == nil {
+					continue
+				}
+				v[sec][key] = append(v[sec][key],
+					&GitConfigValue{
+						scope: (value.scope & ^ScopeMask) | scope,
+						value: value.Value(),
+					})
+
+			}
 		}
 	}
 	return v
