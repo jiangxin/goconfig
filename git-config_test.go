@@ -245,3 +245,120 @@ func ExampleMerge() {
 	// sect2.name1 = value-0.2.1 (system-inc)
 	// sect3.name1 = value-2.3.1 (global)
 }
+
+func TestGitConfigContent(t *testing.T) {
+	assert := assert.New(t)
+
+	data := `[ab "cd"]
+	value1 = x
+	value2 = x y
+	value3 = a \"quote
+	value4 = "has tailing spaces "
+	value5 = "has tailing tabs\t"
+	value6 = "has tailing eol\n"
+[remote "origin"]
+	fetch = +refs/heads/*:refs/remotes/origin/*
+	fetch = +refs/tags/*:refs/tags/*
+`
+	cfg, _, err := Parse([]byte(data), "filename")
+	assert.Nil(err)
+	assert.Equal(data, cfg.String())
+}
+
+func TestStringOfScope(t *testing.T) {
+	assert := assert.New(t)
+
+	sys := NewGitConfig()
+	sys.Add("sect1.Name1", "value-1.1.1")
+	sys.Add("sect1.Name2", "value-1.1.2")
+
+	inc1 := NewGitConfig()
+	inc1.Add("sect1.Name3", "value-0.1.3")
+	inc1.Add("sect2.name1", "value-0.2.1")
+
+	sys.Merge(inc1, ScopeInclude)
+
+	global := NewGitConfig()
+	global.Add("sect1.name2", "value-2.1.2")
+	global.Add("sect1.name3", "value-2.1.3")
+	global.Add("sect1.name4", "value-2.1.4")
+	global.Add("sect3.name1", "value-2.3.1")
+
+	repo := NewGitConfig()
+	repo.Add("sect1.name2", "value-3.1.2")
+	repo.Add("sect1.name3", "value-3.1.3")
+	repo.Add("sect1.name4", "value-3.1.4.1")
+	repo.Add("sect1.name4", "value-3.1.4.2")
+
+	all := NewGitConfig()
+	all.Merge(sys, ScopeSystem)
+	all.Merge(global, ScopeGlobal)
+	all.Merge(repo, ScopeSelf)
+
+	expect := `[sect1]
+	name2 = value-3.1.2
+	name3 = value-3.1.3
+	name4 = value-3.1.4.1
+	name4 = value-3.1.4.2
+`
+	assert.Equal(expect, all.String())
+
+	expect = `[sect1]
+	name1 = value-1.1.1
+	name2 = value-1.1.2
+	name3 = value-0.1.3
+[sect2]
+	name1 = value-0.2.1
+`
+	assert.Equal(expect, all.StringOfScope(ScopeSystem|ScopeInclude))
+
+	expect = `[sect1]
+	name1 = value-1.1.1
+	name2 = value-1.1.2
+`
+	assert.Equal(expect, all.StringOfScope(ScopeSystem))
+
+	expect = `[sect1]
+	name1 = value-1.1.1
+	name2 = value-1.1.2
+	name2 = value-2.1.2
+	name3 = value-2.1.3
+	name4 = value-2.1.4
+[sect3]
+	name1 = value-2.3.1
+`
+	assert.Equal(expect, all.StringOfScope(ScopeSystem|ScopeGlobal))
+
+	expect = `[sect1]
+	name1 = value-1.1.1
+	name2 = value-1.1.2
+	name2 = value-2.1.2
+	name2 = value-3.1.2
+	name3 = value-2.1.3
+	name3 = value-3.1.3
+	name4 = value-2.1.4
+	name4 = value-3.1.4.1
+	name4 = value-3.1.4.2
+[sect3]
+	name1 = value-2.3.1
+`
+	assert.Equal(expect, all.StringOfScope(ScopeSystem|ScopeGlobal|ScopeSelf))
+
+	expect = `[sect1]
+	name1 = value-1.1.1
+	name2 = value-1.1.2
+	name2 = value-2.1.2
+	name2 = value-3.1.2
+	name3 = value-0.1.3
+	name3 = value-2.1.3
+	name3 = value-3.1.3
+	name4 = value-2.1.4
+	name4 = value-3.1.4.1
+	name4 = value-3.1.4.2
+[sect2]
+	name1 = value-0.2.1
+[sect3]
+	name1 = value-2.3.1
+`
+	assert.Equal(expect, all.StringOfScope(ScopeAll))
+}
