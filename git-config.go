@@ -107,6 +107,77 @@ func (v GitConfig) Keys() []string {
 	return allKeys
 }
 
+// Set will replace old config variable
+func (v GitConfig) Set(key, value string) {
+	s, k := toSectionKey(key)
+	keys := v[s]
+	if keys == nil {
+		v._add(s, k, value)
+		return
+	}
+
+	if keys[k] == nil || len(keys[k]) == 0 {
+		v._add(s, k, value)
+		return
+	}
+
+	found := false
+	for i := len(keys[k]) - 1; i >= 0; i-- {
+		if keys[k][i].scope == ScopeSelf {
+			found = true
+			keys[k][i].value = value
+			break
+		}
+	}
+
+	if !found {
+		keys[k] = append(keys[k],
+			&GitConfigValue{
+				scope: ScopeSelf,
+				value: value,
+			})
+	}
+}
+
+// Unset will remove config variable
+func (v GitConfig) Unset(key string) {
+	s, k := toSectionKey(key)
+	keys := v[s]
+	if keys == nil {
+		return
+	}
+
+	if keys[k] == nil || len(keys[k]) == 0 {
+		return
+	}
+
+	for i := len(keys[k]) - 1; i >= 0; i-- {
+		if keys[k][i].scope == ScopeSelf {
+			keys[k] = append(keys[k][:i], keys[k][i+1:]...)
+			break
+		}
+	}
+}
+
+// UnsetAll will remove all config variable
+func (v GitConfig) UnsetAll(key string) {
+	s, k := toSectionKey(key)
+	keys := v[s]
+	if keys == nil {
+		return
+	}
+
+	if keys[k] == nil || len(keys[k]) == 0 {
+		return
+	}
+
+	for i := len(keys[k]) - 1; i >= 0; i-- {
+		if keys[k][i].scope == ScopeSelf {
+			keys[k] = append(keys[k][:i], keys[k][i+1:]...)
+		}
+	}
+}
+
 // Add will add user input key-value pair
 func (v GitConfig) Add(key, value string) {
 	s, k := toSectionKey(key)
