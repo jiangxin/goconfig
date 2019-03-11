@@ -316,3 +316,45 @@ func TestAllConfig(t *testing.T) {
 	assert.Equal("repo 4", allConfig.Get("test.key4"))
 	assert.Equal("repo 5", allConfig.Get("test.key5"))
 }
+
+func TestSaveConfig(t *testing.T) {
+	assert := assert.New(t)
+
+	tmpdir, err := ioutil.TempDir("", "goconfig")
+	if err != nil {
+		panic(err)
+	}
+	defer func(dir string) {
+		os.RemoveAll(dir)
+	}(tmpdir)
+
+	home := os.Getenv("HOME")
+	os.Setenv("HOME", tmpdir)
+	defer os.Setenv("HOME", home)
+
+	// Create system config
+	cfgFile := filepath.Join(tmpdir, "gitconfig")
+
+	assert.Nil(exec.Command("git", "config", "-f", cfgFile, "ab.cd.ef", "value-1").Run())
+	assert.Nil(exec.Command("git", "config", "-f", cfgFile, "ab.cd e.fg", "value 2").Run())
+	assert.Nil(exec.Command("git", "config", "-f", cfgFile, "--add", "ab.cd e.fg", "value 3").Run())
+	assert.Nil(exec.Command("git", "config", "-f", cfgFile, "--add", "ab.cd e.fg", "value 4").Run())
+	assert.Nil(exec.Command("git", "config", "-f", cfgFile, "ab.cd", "value has space ").Run())
+
+	// Load cfgFile
+	cfg, err := LoadFile(cfgFile, false)
+	assert.Nil(err)
+	assert.Equal("value has space ", cfg.Get("ab.cd"))
+
+	// Save file
+	newCfgFile := cfgFile + ".new"
+	err = cfg.Save(newCfgFile)
+	assert.Nil(err)
+	_, err = os.Stat(newCfgFile)
+	assert.Nil(err)
+
+	// Load new file
+	newCfg, err := LoadFile(newCfgFile, false)
+	assert.Nil(err)
+	assert.Equal(cfg, newCfg)
+}
