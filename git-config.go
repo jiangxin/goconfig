@@ -2,6 +2,8 @@ package goconfig
 
 import (
 	"fmt"
+	"io/ioutil"
+	"os"
 	"reflect"
 	"sort"
 	"strconv"
@@ -406,4 +408,23 @@ func (v GitConfig) StringOfScope(scope Scope) string {
 
 	}
 	return strings.Join(lines, "\n") + "\n"
+}
+
+// Save will save git config to file
+func (v GitConfig) Save(file string) error {
+	lockFile := file + ".lock"
+
+	err := ioutil.WriteFile(lockFile, []byte(v.String()), 0644)
+	defer os.Remove(lockFile)
+
+	if err != nil {
+		return err
+	}
+
+	_, err = LoadFile(lockFile, false)
+	if err != nil {
+		return fmt.Errorf("fail to save '%s': %s", file, err)
+	}
+
+	return os.Rename(lockFile, file)
 }
