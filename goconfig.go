@@ -60,7 +60,7 @@ func (cf *parser) parse() (map[string]string, error) {
 		if !isalpha(c) {
 			return cfg, ErrInvalidKeyChar
 		}
-		key := name + string(c)
+		key := name + string(lower(c))
 		value, err := cf.getValue(&key)
 		if err != nil {
 			return cfg, err

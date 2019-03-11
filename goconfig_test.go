@@ -40,6 +40,15 @@ func TestNoNewLine(t *testing.T) {
 	assert.Equal(t, map[string]string{"user.name": "Danyel"}, config)
 }
 
+func TestUpperCaseKey(t *testing.T) {
+	validConfig := "[core]\nQuotePath = false\n"
+	config, lineno, err := Parse([]byte(validConfig))
+	assert.Equal(t, nil, err)
+	assert.Equal(t, 3, int(lineno))
+	expect := map[string]string{"core.quotepath": "false"}
+	assert.Equal(t, expect, config)
+}
+
 func TestExtended(t *testing.T) {
 	validConfig := `[http "https://my-website.com"] sslVerify = false`
 	config, lineno, err := Parse([]byte(validConfig))
