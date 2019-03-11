@@ -362,3 +362,64 @@ func TestStringOfScope(t *testing.T) {
 `
 	assert.Equal(expect, all.StringOfScope(ScopeAll))
 }
+
+func TestSetUnset(t *testing.T) {
+	assert := assert.New(t)
+
+	sys := NewGitConfig()
+	sys.Add("sect1.name1", "value-1.1.1")
+	sys.Add("sect1.name2", "value-1.1.2")
+
+	inc1 := NewGitConfig()
+	inc1.Add("sect1.name3", "value-0.1.3")
+	inc1.Add("sect2.name1", "value-0.2.1")
+
+	sys.Merge(inc1, ScopeInclude)
+
+	global := NewGitConfig()
+	global.Add("sect1.name2", "value-2.1.2")
+	global.Add("sect1.name3", "value-2.1.3")
+	global.Add("sect1.name4", "value-2.1.4")
+	global.Add("sect3.name1", "value-2.3.1")
+
+	repo := NewGitConfig()
+	repo.Add("sect1.name2", "value-3.1.2")
+	repo.Add("sect1.name3", "value-3.1.3")
+	repo.Add("sect1.name4", "value-3.1.4.1")
+	repo.Add("sect1.name4", "value-3.1.4.2")
+
+	all := NewGitConfig()
+	all.Merge(sys, ScopeSystem)
+	all.Merge(global, ScopeGlobal)
+	all.Merge(repo, ScopeSelf)
+
+	all.Unset("sect1.name0")
+	assert.Equal("", all.Get("sect1.name0"))
+
+	assert.Equal("value-3.1.2", all.Get("sect1.name2"))
+	all.Set("sect1.name2", "value-3.1.2.2")
+	assert.Equal("value-3.1.2.2", all.Get("sect1.name2"))
+	all.Unset("sect1.name2")
+	assert.Equal("value-2.1.2", all.Get("sect1.name2"))
+	all.Unset("sect1.name2")
+	assert.Equal("value-2.1.2", all.Get("sect1.name2"))
+
+	assert.Equal([]string{
+		"value-2.1.4",
+		"value-3.1.4.1",
+		"value-3.1.4.2",
+	}, all.GetAll("sect1.name4"))
+
+	all.UnsetAll("sect1.name4")
+
+	assert.Equal([]string{
+		"value-2.1.4",
+	}, all.GetAll("sect1.name4"))
+
+	assert.Equal(`[sect1]
+	name3 = value-3.1.3`+"\n", all.String())
+
+	all.UnsetAll("sect1.name3")
+
+	assert.Equal("\n", all.String())
+}
