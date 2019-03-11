@@ -25,6 +25,7 @@ func TestSystemConfig(t *testing.T) {
 
 	cfgFile := filepath.Join(tmpdir, "test.config")
 	os.Setenv(gitSystemConfigEnv, cfgFile)
+	defer os.Unsetenv(gitSystemConfigEnv)
 
 	err = ioutil.WriteFile(cfgFile,
 		[]byte(`[test]
@@ -84,8 +85,6 @@ func TestSystemConfig(t *testing.T) {
 func TestLoadGlobalConfig(t *testing.T) {
 	assert := assert.New(t)
 
-	home := os.Getenv("HOME")
-
 	tmpdir, err := ioutil.TempDir("", "goconfig")
 	if err != nil {
 		panic(err)
@@ -94,7 +93,9 @@ func TestLoadGlobalConfig(t *testing.T) {
 		os.RemoveAll(dir)
 	}(tmpdir)
 
+	home := os.Getenv("HOME")
 	os.Setenv("HOME", tmpdir)
+	defer os.Setenv("HOME", home)
 
 	cfg, err := GlobalConfig()
 	assert.Nil(err)
@@ -154,13 +155,10 @@ func TestLoadGlobalConfig(t *testing.T) {
 	assert.NotNil(cfg)
 	assert.Equal("user3", cfg.Get("user.name"))
 	assert.Equal("user3@email.addr", cfg.Get("user.email"))
-
-	os.Setenv("HOME", home)
 }
 
 func TestRepoConfig(t *testing.T) {
 	assert := assert.New(t)
-	home := os.Getenv("HOME")
 
 	tmpdir, err := ioutil.TempDir("", "goconfig")
 	if err != nil {
@@ -170,6 +168,7 @@ func TestRepoConfig(t *testing.T) {
 		os.RemoveAll(dir)
 	}(tmpdir)
 
+	home := os.Getenv("HOME")
 	os.Setenv("HOME", tmpdir)
 	defer os.Setenv("HOME", home)
 
@@ -244,6 +243,8 @@ func TestAllConfig(t *testing.T) {
 	// Create system config
 	sysCfgFile := filepath.Join(tmpdir, "system-config")
 	os.Setenv(gitSystemConfigEnv, sysCfgFile)
+	defer os.Unsetenv(gitSystemConfigEnv)
+
 	assert.Nil(exec.Command("git", "config", "-f", sysCfgFile, "test.key1", "sys 1").Run())
 	assert.Nil(exec.Command("git", "config", "-f", sysCfgFile, "test.key2", "sys 2").Run())
 	assert.Nil(exec.Command("git", "config", "-f", sysCfgFile, "test.key3", "sys 3").Run())
@@ -254,6 +255,8 @@ func TestAllConfig(t *testing.T) {
 	// Create user config
 	home := os.Getenv("HOME")
 	os.Setenv("HOME", tmpdir)
+	defer os.Setenv("HOME", home)
+
 	userCfgFile, err := globalConfigFile()
 	assert.Nil(err)
 	assert.Nil(exec.Command("git", "config", "-f", userCfgFile, "test.key2", "user 2").Run())
@@ -312,7 +315,4 @@ func TestAllConfig(t *testing.T) {
 	assert.Equal("repo 3", allConfig.Get("test.key3"))
 	assert.Equal("repo 4", allConfig.Get("test.key4"))
 	assert.Equal("repo 5", allConfig.Get("test.key5"))
-
-	os.Unsetenv(gitSystemConfigEnv)
-	os.Setenv("HOME", home)
 }
