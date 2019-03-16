@@ -257,7 +257,7 @@ func TestAllConfig(t *testing.T) {
 	os.Setenv("HOME", tmpdir)
 	defer os.Setenv("HOME", home)
 
-	userCfgFile, err := globalConfigFile()
+	userCfgFile, err := GlobalConfigFile()
 	assert.Nil(err)
 	assert.Nil(exec.Command("git", "config", "-f", userCfgFile, "test.key2", "user 2").Run())
 	assert.Nil(exec.Command("git", "config", "-f", userCfgFile, "test.key3", "user 3").Run())

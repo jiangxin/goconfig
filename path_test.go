@@ -234,20 +234,20 @@ func TestFindGitDir(t *testing.T) {
 	gitdir = filepath.Join(tmpdir, "bare.git")
 	cmd := exec.Command("git", "init", "--bare", gitdir, "--")
 	assert.Equal(t, nil, cmd.Run())
-	dir, err = findGitDir(gitdir)
+	dir, err = FindGitDir(gitdir)
 	assert.Equal(t, nil, err)
 	assert.Equal(t, gitdir, dir)
 
-	cfg, err = findGitConfig(gitdir)
+	cfg, err = FindGitConfig(gitdir)
 	assert.Equal(t, nil, err)
 	assert.Equal(t, filepath.Join(gitdir, "config"), cfg)
 
 	// find in: bare.git/objects/pack
-	dir, err = findGitDir(filepath.Join(gitdir, "objects", "pack"))
+	dir, err = FindGitDir(filepath.Join(gitdir, "objects", "pack"))
 	assert.Equal(t, nil, err)
 	assert.Equal(t, gitdir, dir)
 
-	cfg, err = findGitConfig(filepath.Join(gitdir, "objects", "pack"))
+	cfg, err = FindGitConfig(filepath.Join(gitdir, "objects", "pack"))
 	assert.Equal(t, nil, err)
 	assert.Equal(t, filepath.Join(gitdir, "config"), cfg)
 
@@ -261,11 +261,11 @@ func TestFindGitDir(t *testing.T) {
 	assert.Equal(t, nil, err)
 
 	// find in: repo2/a/b/c
-	dir, err = findGitDir(filepath.Join(repo2, "a", "b", "c"))
+	dir, err = FindGitDir(filepath.Join(repo2, "a", "b", "c"))
 	assert.Equal(t, nil, err)
 	assert.Equal(t, gitdir, dir)
 
-	cfg, err = findGitConfig(filepath.Join(repo2, "a", "b", "c"))
+	cfg, err = FindGitConfig(filepath.Join(repo2, "a", "b", "c"))
 	assert.Equal(t, nil, err)
 	assert.Equal(t, filepath.Join(gitdir, "config"), cfg)
 
@@ -276,11 +276,11 @@ func TestFindGitDir(t *testing.T) {
 	assert.Equal(t, nil, err)
 
 	// fail to find in repo2/a/b/c (bad gitdir file)
-	dir, err = findGitDir(filepath.Join(repo2, "a", "b", "c"))
+	dir, err = FindGitDir(filepath.Join(repo2, "a", "b", "c"))
 	assert.NotEqual(t, nil, err)
 	assert.Equal(t, "", dir)
 
-	cfg, err = findGitConfig(filepath.Join(repo2, "a", "b", "c"))
+	cfg, err = FindGitConfig(filepath.Join(repo2, "a", "b", "c"))
 	assert.NotEqual(t, nil, err)
 	assert.Equal(t, "", cfg)
 
@@ -294,38 +294,38 @@ func TestFindGitDir(t *testing.T) {
 	assert.Equal(t, nil, err)
 
 	// find in workdir
-	dir, err = findGitDir(workdir)
+	dir, err = FindGitDir(workdir)
 	assert.Equal(t, nil, err)
 	assert.Equal(t, gitdir, dir)
 
-	cfg, err = findGitConfig(workdir)
+	cfg, err = FindGitConfig(workdir)
 	assert.Equal(t, nil, err)
 	assert.Equal(t, filepath.Join(gitdir, "config"), cfg)
 
 	// find in workdir/.git
-	dir, err = findGitDir(gitdir)
+	dir, err = FindGitDir(gitdir)
 	assert.Equal(t, nil, err)
 	assert.Equal(t, gitdir, dir)
 
-	cfg, err = findGitConfig(gitdir)
+	cfg, err = FindGitConfig(gitdir)
 	assert.Equal(t, nil, err)
 	assert.Equal(t, filepath.Join(gitdir, "config"), cfg)
 
 	// find in workdir/.git
-	dir, err = findGitDir(filepath.Join(workdir, "a", "b", "c"))
+	dir, err = FindGitDir(filepath.Join(workdir, "a", "b", "c"))
 	assert.Equal(t, nil, err)
 	assert.Equal(t, gitdir, dir)
 
-	cfg, err = findGitConfig(filepath.Join(workdir, "a", "b", "c"))
+	cfg, err = FindGitConfig(filepath.Join(workdir, "a", "b", "c"))
 	assert.Equal(t, nil, err)
 	assert.Equal(t, filepath.Join(gitdir, "config"), cfg)
 
 	// fail to find in tmpdir
-	dir, err = findGitDir(tmpdir)
+	dir, err = FindGitDir(tmpdir)
 	assert.Equal(t, "", dir)
 	assert.Equal(t, nil, err)
 
-	cfg, err = findGitConfig(tmpdir)
+	cfg, err = FindGitConfig(tmpdir)
 	assert.Equal(t, nil, err)
 	assert.Equal(t, "", cfg)
 
