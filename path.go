@@ -99,7 +99,8 @@ func AbsJoin(dir, name string) (string, error) {
 	return Abs(filepath.Join(dir, name))
 }
 
-func isGitDir(dir string) bool {
+// IsGitDir test whether dir is a valid git dir
+func IsGitDir(dir string) bool {
 	var (
 		err error
 		fi  os.FileInfo
@@ -123,7 +124,8 @@ func isGitDir(dir string) bool {
 	return true
 }
 
-func findGitDir(dir string) (string, error) {
+// FindGitDir searches git dir
+func FindGitDir(dir string) (string, error) {
 	var err error
 
 	dir, err = Abs(dir)
@@ -133,7 +135,7 @@ func findGitDir(dir string) (string, error) {
 
 	for {
 		// Check if is in a bare repo
-		if isGitDir(dir) {
+		if IsGitDir(dir) {
 			return dir, nil
 		}
 
@@ -149,7 +151,7 @@ func findGitDir(dir string) (string, error) {
 			}
 			continue
 		} else if fi.IsDir() {
-			if isGitDir(gitdir) {
+			if IsGitDir(gitdir) {
 				return gitdir, nil
 			}
 			return "", fmt.Errorf("corrupt git dir: %s", gitdir)
@@ -169,7 +171,7 @@ func findGitDir(dir string) (string, error) {
 						return "", err
 					}
 				}
-				if isGitDir(realgit) {
+				if IsGitDir(realgit) {
 					return realgit, nil
 				}
 				return "", fmt.Errorf("gitdir '%s' points to corrupt git repo: %s", gitdir, realgit)
@@ -180,15 +182,17 @@ func findGitDir(dir string) (string, error) {
 	return "", nil
 }
 
-func findGitConfig(dir string) (string, error) {
-	dir, err := findGitDir(dir)
+// FindGitConfig returns local git config file
+func FindGitConfig(dir string) (string, error) {
+	dir, err := FindGitDir(dir)
 	if err == nil && dir != "" {
 		return filepath.Join(dir, "config"), nil
 	}
 	return "", err
 }
 
-func systemConfigFile() string {
+// SystemConfigFile returns system git config file
+func SystemConfigFile() string {
 	file := os.Getenv(gitSystemConfigEnv)
 	if file == "" {
 		file = "/etc/gitconfig"
@@ -196,7 +200,8 @@ func systemConfigFile() string {
 	return file
 }
 
-func globalConfigFile() (string, error) {
+// GlobalConfigFile returns global git config file
+func GlobalConfigFile() (string, error) {
 	var (
 		file string
 		err  error
