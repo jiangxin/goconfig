@@ -323,10 +323,10 @@ func TestFindGitDir(t *testing.T) {
 	// fail to find in tmpdir
 	dir, err = FindGitDir(tmpdir)
 	assert.Equal(t, "", dir)
-	assert.Equal(t, nil, err)
+	assert.Equal(t, ErrNotInGitDir, err)
 
 	cfg, err = FindGitConfig(tmpdir)
-	assert.Equal(t, nil, err)
+	assert.Equal(t, ErrNotInGitDir, err)
 	assert.Equal(t, "", cfg)
 
 	os.Setenv("HOME", home)

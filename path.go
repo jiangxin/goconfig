@@ -179,13 +179,13 @@ func FindGitDir(dir string) (string, error) {
 			return "", fmt.Errorf("bad gitdir file '%s'", gitdir)
 		}
 	}
-	return "", nil
+	return "", ErrNotInGitDir
 }
 
 // FindGitConfig returns local git config file
 func FindGitConfig(dir string) (string, error) {
 	dir, err := FindGitDir(dir)
-	if err == nil && dir != "" {
+	if err == nil {
 		return filepath.Join(dir, "config"), nil
 	}
 	return "", err
