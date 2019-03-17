@@ -141,28 +141,17 @@ func (v GitConfig) Set(key, value string) {
 	}
 }
 
-// Unset will remove config variable
+// Unset will remove latest setting of a config variable
 func (v GitConfig) Unset(key string) {
-	s, k := toSectionKey(key)
-	keys := v[s]
-	if keys == nil {
-		return
-	}
-
-	if keys[k] == nil || len(keys[k]) == 0 {
-		return
-	}
-
-	for i := len(keys[k]) - 1; i >= 0; i-- {
-		if keys[k][i].scope == ScopeSelf {
-			keys[k] = append(keys[k][:i], keys[k][i+1:]...)
-			break
-		}
-	}
+	v.unset(key, false)
 }
 
-// UnsetAll will remove all config variable
+// UnsetAll will remove all settings of a config variable
 func (v GitConfig) UnsetAll(key string) {
+	v.unset(key, true)
+}
+
+func (v GitConfig) unset(key string, all bool) {
 	s, k := toSectionKey(key)
 	keys := v[s]
 	if keys == nil {
@@ -176,6 +165,9 @@ func (v GitConfig) UnsetAll(key string) {
 	for i := len(keys[k]) - 1; i >= 0; i-- {
 		if keys[k][i].scope == ScopeSelf {
 			keys[k] = append(keys[k][:i], keys[k][i+1:]...)
+			if !all {
+				break
+			}
 		}
 	}
 }
