@@ -417,7 +417,7 @@ func (v GitConfig) Save(file string) error {
 		return err
 	}
 
-	_, err = LoadFile(lockFile, false)
+	_, err = Load(lockFile)
 	if err != nil {
 		return fmt.Errorf("fail to save '%s': %s", file, err)
 	}

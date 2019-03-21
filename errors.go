@@ -38,3 +38,6 @@ var ErrNotBoolValue = errors.New("not a bool value")
 
 // ErrNotInGitDir indicates not in a git dir
 var ErrNotInGitDir = errors.New("not in a git dir")
+
+// ErrNotExist indicates file or dir not exist
+var ErrNotExist = errors.New("config file or dir not exist")

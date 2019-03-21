@@ -175,10 +175,10 @@ func main() {
 		os.Exit(1)
 	}
 
-	if configFile != "" {
-		cfg, err = goconfig.LoadFile(configFile, optInclude)
+	if optInclude {
+		cfg, err = goconfig.LoadAll(configFile)
 	} else {
-		cfg, err = goconfig.LoadDir("", optInclude)
+		cfg, err = goconfig.Load(configFile)
 	}
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "ERROR: %s\n", err)

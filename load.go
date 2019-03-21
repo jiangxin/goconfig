@@ -1,58 +1,51 @@
 package goconfig
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 )
 
-func loadOne(name string, searching bool) (GitConfig, error) {
+// Load only loads one file or config of current repository
+func Load(name string) (GitConfig, error) {
 	var (
-		err error
-		fi  os.FileInfo
+		err    error
+		fi     os.FileInfo
+		search bool
 	)
 
 	if name == "" {
-		if !searching {
-			return nil, fmt.Errorf("filepath is not provided")
-		}
-
+		search = true
 		name, err = os.Getwd()
 		if err != nil {
 			return nil, err
 		}
+	} else {
+		fi, err = os.Stat(name)
+		if err != nil {
+			return nil, ErrNotExist
+		}
+		if fi.IsDir() {
+			search = true
+		}
 	}
 
-	// cannot find, lookup upper dir to find gitdir
-	fi, err = os.Stat(name)
-	if err != nil || fi.IsDir() {
-		if !searching {
-			return nil, nil
-		}
-
+	if search {
 		name, err = FindGitConfig(name)
 		if err != nil {
 			if err == ErrNotInGitDir {
 				return nil, nil
-			} else {
-				return nil, err
 			}
-		}
-
-		fi, err = os.Stat(name)
-
-		if err != nil {
-			return nil, nil
+			return nil, err
 		}
 	}
 
-	// return cache if available
-	c, ok := configCaches.Get(name)
+	c, ok := configCaches.get(name)
 	if ok {
-		if fi.ModTime() == c.time {
-			return c.config, nil
-		}
+		return c.config, nil
 	}
+
+	// cache will be updated using this time
+	fi, _ = os.Stat(name)
 
 	buf, err := ioutil.ReadFile(name)
 	if err != nil {
@@ -65,14 +58,12 @@ func loadOne(name string, searching bool) (GitConfig, error) {
 	}
 
 	// update cache
-	configCaches.Set(name, cacheItem{
-		config: cfg,
-		time:   fi.ModTime(),
-	})
+	configCaches.set(name, cfg, fi.ModTime())
 	return cfg, nil
 }
 
-func loadAll(name string, searching bool) (GitConfig, error) {
+// LoadAll will load additional global and system config files
+func LoadAll(name string) (GitConfig, error) {
 	cfg := NewGitConfig()
 
 	sysConfig, err := SystemConfig()
@@ -85,7 +76,7 @@ func loadAll(name string, searching bool) (GitConfig, error) {
 		return nil, err
 	}
 
-	repoConfig, err := loadOne(name, searching)
+	repoConfig, err := Load(name)
 	if err != nil {
 		return nil, err
 	}
@@ -105,24 +96,6 @@ func loadAll(name string, searching bool) (GitConfig, error) {
 	return cfg, nil
 }
 
-// LoadFile loads git config file
-func LoadFile(name string, inherit bool) (GitConfig, error) {
-	if !inherit {
-		return loadOne(name, false)
-	}
-
-	return loadAll(name, false)
-}
-
-// LoadDir loads config from gitdir
-func LoadDir(name string, inherit bool) (GitConfig, error) {
-	if !inherit {
-		return loadOne(name, true)
-	}
-
-	return loadAll(name, true)
-}
-
 // SystemConfig returns system git config, reload if necessary
 func SystemConfig() (GitConfig, error) {
 	file := SystemConfigFile()
@@ -130,7 +103,10 @@ func SystemConfig() (GitConfig, error) {
 		return nil, nil
 	}
 
-	return loadOne(file, false)
+	if _, err := os.Stat(file); err != nil {
+		return nil, nil
+	}
+	return Load(file)
 }
 
 // GlobalConfig returns global user config, reload if necessary
@@ -140,5 +116,8 @@ func GlobalConfig() (GitConfig, error) {
 		return nil, err
 	}
 
-	return loadOne(file, false)
+	if _, err := os.Stat(file); err != nil {
+		return nil, nil
+	}
+	return Load(file)
 }
