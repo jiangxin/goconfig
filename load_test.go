@@ -12,6 +12,104 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestLoadFileNotExist(t *testing.T) {
+	assert := assert.New(t)
+
+	tmpdir, err := ioutil.TempDir("", "goconfig")
+	if err != nil {
+		panic(err)
+	}
+	defer func(dir string) {
+		os.RemoveAll(dir)
+	}(tmpdir)
+
+	home := os.Getenv("HOME")
+	os.Setenv("HOME", tmpdir)
+	defer os.Setenv("HOME", home)
+
+	sysConfigFile := filepath.Join(tmpdir, "test.config")
+	os.Setenv(gitSystemConfigEnv, sysConfigFile)
+	defer os.Unsetenv(gitSystemConfigEnv)
+
+	missing := filepath.Join(tmpdir, "missing")
+	cfg, err := Load(missing)
+	assert.Equal(ErrNotExist, err)
+	assert.Nil(cfg)
+}
+
+func TestLoadNotGitdir(t *testing.T) {
+	assert := assert.New(t)
+
+	tmpdir, err := ioutil.TempDir("", "goconfig")
+	if err != nil {
+		panic(err)
+	}
+	defer func(dir string) {
+		os.RemoveAll(dir)
+	}(tmpdir)
+
+	home := os.Getenv("HOME")
+	os.Setenv("HOME", tmpdir)
+	defer os.Setenv("HOME", home)
+
+	sysConfigFile := filepath.Join(tmpdir, "test.config")
+	os.Setenv(gitSystemConfigEnv, sysConfigFile)
+	defer os.Unsetenv(gitSystemConfigEnv)
+
+	cfg, err := Load(tmpdir)
+	assert.Equal(nil, err)
+	assert.Nil(cfg)
+}
+
+func TestLoadAllFileNotExist(t *testing.T) {
+	assert := assert.New(t)
+
+	tmpdir, err := ioutil.TempDir("", "goconfig")
+	if err != nil {
+		panic(err)
+	}
+	defer func(dir string) {
+		os.RemoveAll(dir)
+	}(tmpdir)
+
+	home := os.Getenv("HOME")
+	os.Setenv("HOME", tmpdir)
+	defer os.Setenv("HOME", home)
+
+	sysConfigFile := filepath.Join(tmpdir, "test.config")
+	os.Setenv(gitSystemConfigEnv, sysConfigFile)
+	defer os.Unsetenv(gitSystemConfigEnv)
+
+	missing := filepath.Join(tmpdir, "missing")
+	cfg, err := LoadAll(missing)
+	assert.Equal(ErrNotExist, err)
+	assert.Nil(cfg)
+}
+
+func TestLoadAllNotGitdir(t *testing.T) {
+	assert := assert.New(t)
+
+	tmpdir, err := ioutil.TempDir("", "goconfig")
+	if err != nil {
+		panic(err)
+	}
+	defer func(dir string) {
+		os.RemoveAll(dir)
+	}(tmpdir)
+
+	home := os.Getenv("HOME")
+	os.Setenv("HOME", tmpdir)
+	defer os.Setenv("HOME", home)
+
+	sysConfigFile := filepath.Join(tmpdir, "test.config")
+	os.Setenv(gitSystemConfigEnv, sysConfigFile)
+	defer os.Unsetenv(gitSystemConfigEnv)
+
+	cfg, err := LoadAll(tmpdir)
+	assert.Equal(nil, err)
+	assert.Equal(GitConfig{}, cfg)
+}
+
 func TestSystemConfig(t *testing.T) {
 	assert := assert.New(t)
 
@@ -168,9 +266,29 @@ func TestRepoConfig(t *testing.T) {
 		os.RemoveAll(dir)
 	}(tmpdir)
 
+	// Create system config
+	sysCfgFile := filepath.Join(tmpdir, "system-config")
+	os.Setenv(gitSystemConfigEnv, sysCfgFile)
+	defer os.Unsetenv(gitSystemConfigEnv)
+
+	assert.Nil(exec.Command("git", "config", "-f", sysCfgFile, "test.foo", "sys foo").Run())
+	assert.Nil(exec.Command("git", "config", "-f", sysCfgFile, "test.bar", "sys bar").Run())
+	sysConfig, err := SystemConfig()
+	assert.Nil(err)
+	assert.NotNil(sysConfig)
+
+	// Create user config
 	home := os.Getenv("HOME")
 	os.Setenv("HOME", tmpdir)
 	defer os.Setenv("HOME", home)
+
+	userCfgFile, err := GlobalConfigFile()
+	assert.Nil(err)
+	assert.Nil(exec.Command("git", "config", "-f", userCfgFile, "test.bar", "global bar").Run())
+	assert.Nil(exec.Command("git", "config", "-f", userCfgFile, "test.baz", "global baz").Run())
+	userConfig, err := GlobalConfig()
+	assert.Nil(err)
+	assert.NotNil(userConfig)
 
 	// create bare.git
 	gitdir := filepath.Join(tmpdir, "bare.git")
@@ -189,11 +307,12 @@ func TestRepoConfig(t *testing.T) {
 	assert.Nil(cmd.Run())
 
 	// load config of bare.git
-	cfg, err := LoadDir(gitdir, false)
+	cfg, err := Load(gitdir)
 	assert.Nil(err)
 	assert.Equal("has bar", cfg.Get("test.bar"))
 	assert.Equal([]string{sharedCfg}, cfg.GetAll("include.path"))
 	assert.Equal("has foo", cfg.Get("test.foo"))
+	assert.Equal("", cfg.Get("test.baz"))
 }
 
 func TestCircularInclude(t *testing.T) {
@@ -215,7 +334,7 @@ func TestCircularInclude(t *testing.T) {
 	cmd = exec.Command("git", "config", "-f", sharedCfg2, "include.path", sharedCfg1)
 	assert.Nil(cmd.Run())
 
-	_, err = LoadFile(sharedCfg1, false)
+	_, err = Load(sharedCfg1)
 	assert.NotNil(err)
 	assert.True(strings.HasPrefix(err.Error(), "exceeded maximum include depth"))
 
@@ -225,7 +344,7 @@ func TestCircularInclude(t *testing.T) {
 	assert.Nil(cmd.Run())
 	cmd = exec.Command("git", "-C", workdir, "config", "include.path", sharedCfg1)
 	assert.Nil(cmd.Run())
-	_, err = LoadDir(workdir, false)
+	_, err = Load(workdir)
 	assert.True(strings.HasPrefix(err.Error(), "exceeded maximum include depth"))
 }
 
@@ -273,12 +392,12 @@ func TestAllConfig(t *testing.T) {
 	assert.Nil(exec.Command("git", "-C", workdir, "config", "test.key4", "repo 4").Run())
 	assert.Nil(exec.Command("git", "-C", workdir, "config", "test.key5", "repo 5").Run())
 
-	repoConfig, err := LoadDir(workdir, false)
+	repoConfig, err := Load(workdir)
 	assert.Nil(err)
 	assert.NotNil(repoConfig)
 
 	// Get all config
-	allConfig, err := LoadDir(workdir, true)
+	allConfig, err := LoadAll(workdir)
 	assert.Nil(err)
 	assert.NotNil(allConfig)
 
@@ -342,7 +461,7 @@ func TestSaveConfig(t *testing.T) {
 	assert.Nil(exec.Command("git", "config", "-f", cfgFile, "ab.cd", "value has space ").Run())
 
 	// Load cfgFile
-	cfg, err := LoadFile(cfgFile, false)
+	cfg, err := Load(cfgFile)
 	assert.Nil(err)
 	assert.Equal("value has space ", cfg.Get("ab.cd"))
 
@@ -354,7 +473,7 @@ func TestSaveConfig(t *testing.T) {
 	assert.Nil(err)
 
 	// Load new file
-	newCfg, err := LoadFile(newCfgFile, false)
+	newCfg, err := Load(newCfgFile)
 	assert.Nil(err)
 	assert.Equal(cfg, newCfg)
 }
