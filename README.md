@@ -1,7 +1,7 @@
 goconfig
 ========
 
-[![Travis Build Status](https://travis-ci.org/muja/goconfig.svg?branch=master)](https://travis-ci.org/muja/goconfig)
+[![Travis Build Status](https://travis-ci.org/jiangxin/goconfig.svg?branch=master)](https://travis-ci.org/jiangxin/goconfig)
 
 # Table of contents
 
@@ -14,36 +14,46 @@ goconfig
 
 # 1. Introduction
 
-This project parses config files that have the same syntax as gitconfig files. It is a
-minimal parser, and maybe a writer sometime in the future. It has no knowledge of git-specific
-keys and as such, does not provide any convenience methods like  `config.GetUserName()`.
-For these, look into [go-gitconfig](https://github.com/tcnksm/go-gitconfig)
+This project parses config files that have the same syntax as gitconfig files. It understands
+multiple values configuration, and can parse included configs by `include.path` directions
+(`includeIf.*.path` configuration is not supported yet).
+
+It has no knowledge of git-specific keys and as such, does not provide any convenience methods
+like  `config.GetUserName()`. For these, look into [go-gitconfig](https://github.com/tcnksm/go-gitconfig)
 
 Most of the code was copied and translated to Go from [git/config.c](https://github.com/git/git/blob/95ec6b1b3393eb6e26da40c565520a8db9796e9f/config.c)
 
 # 2. Usage
 
-Currently, there is only one function: `Parse`.
+To load specific git config file and inherit global and system git config, using:
 
 ```go
-import "os/user"
-import "path/filepath"
-import "io/ioutil"
-import "github.com/muja/goconfig"
+package main
 
-user, _ := user.Current()
-// don't forget to handle error!
-gitconfig := filepath.Join(user.HomeDir, ".gitconfig")
-bytes, _ := ioutil.ReadFile(gitconfig)
+import (
+	"fmt"
+	"log"
 
-config, lineno, err := goconfig.Parse(bytes)
-if err != nil {
-  // Note: config is non-nil and contains successfully parsed values
-  log.Fatalf("Error on line %d: %v.\n", err)
+	"github.com/jiangxin/goconfig"
+)
+
+func main() {
+	cfg, err := goconfig.LoadAll("")
+	if err != nil {
+		log.Fatal(err)
+	}
+	if cfg == nil {
+		log.Fatal("cfg is nil")
+	}
+
+	fmt.Printf(cfg.Get("user.name"))
 }
-fmt.Println(config["user.name"])
-fmt.Println(config["user.email"])
 ```
+
+As an example, there is a full functional `git config` to read/write git
+config file implemented by goconfig, see:
+
+    cmd/goconfig/main.go
 
 # 3. Contributing
 
