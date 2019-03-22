@@ -13,7 +13,7 @@ test:
 	$(call message,Testing goconfig using golint for coding style)
 	@golint
 	$(call message,Testing goconfig for unit tests)
-	@go test ./...
+	@go test
 
 clean:
 	rm -f $(TARGET)

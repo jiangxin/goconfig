@@ -1,10 +1,12 @@
 package goconfig
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -27,59 +29,70 @@ func TestExpendHome(t *testing.T) {
 		os.RemoveAll(dir)
 	}(tmpdir)
 
-	home = os.Getenv("HOME")
+	home, err = HomeDir()
+	assert.Nil(err)
+	defer func(home string) {
+		SetHome(home)
+	}(home)
 
-	os.Unsetenv("HOME")
-	name, err = homeDir()
+	UnsetHome()
+	name, err = HomeDir()
 	assert.NotNil(err)
 	assert.Equal("", name)
 
-	name, err = expendHome("")
+	name, err = ExpendHome("")
 	assert.NotNil(err)
 	assert.Equal("", name)
 
-	os.Setenv("HOME", tmpdir)
+	SetHome(tmpdir)
 
-	name, err = homeDir()
+	name, err = HomeDir()
 	assert.Equal(tmpdir, name)
 
-	name, err = expendHome("")
+	name, err = ExpendHome("")
 	assert.Nil(err)
 	assert.Equal(tmpdir, name)
 
-	name, err = expendHome("a")
+	name, err = ExpendHome("a")
 	assert.Nil(err)
 	assert.Equal(filepath.Join(tmpdir, "a"), name)
 
-	name, err = expendHome("~a")
+	name, err = ExpendHome("~a")
 	assert.Nil(err)
 	assert.Equal(filepath.Join(tmpdir, "~a"), name)
 
-	name, err = expendHome("~")
+	name, err = ExpendHome("~")
 	assert.Nil(err)
 	assert.Equal(tmpdir, name)
 
-	name, err = expendHome("~/")
+	name, err = ExpendHome("~/")
 	assert.Nil(err)
 	assert.Equal(tmpdir, name)
 
-	name, err = expendHome("~/a")
+	name, err = ExpendHome("~/a")
 	assert.Nil(err)
 	assert.Equal(filepath.Join(tmpdir, "a"), name)
 
-	name, err = expendHome("ab")
+	name, err = ExpendHome("ab")
 	assert.Nil(err)
 	assert.Equal(filepath.Join(tmpdir, "ab"), name)
 
-	name, err = expendHome("/")
+	inputdir := "/"
+	if runtime.GOOS == "windows" {
+		inputdir = "c:\\"
+	}
+	name, err = ExpendHome(inputdir)
 	assert.Nil(err)
-	assert.Equal("/", name)
+	assert.Equal(inputdir, name)
 
-	name, err = expendHome("/a")
+	inputdir = "/a"
+	if runtime.GOOS == "windows" {
+		inputdir = "c:\\a"
+	}
+	name, err = ExpendHome(inputdir)
 	assert.Nil(err)
-	assert.Equal("/a", name)
+	assert.Equal(inputdir, name)
 
-	os.Setenv("HOME", home)
 }
 
 func TestAbs(t *testing.T) {
@@ -99,18 +112,23 @@ func TestAbs(t *testing.T) {
 		os.RemoveAll(dir)
 	}(tmpdir)
 
-	home = os.Getenv("HOME")
+	home, err = HomeDir()
+	assert.Nil(err)
+	defer func(home string) {
+		SetHome(home)
+	}(home)
 
-	os.Unsetenv("HOME")
+	UnsetHome()
 	name, err = Abs("~/")
 	assert.NotNil(err)
 	assert.Equal("", name)
 
-	os.Setenv("HOME", tmpdir)
-	cwd, _ := os.Getwd()
+	SetHome(tmpdir)
+	cwd, err := os.Getwd()
+	assert.Nil(err)
 
 	name, err = Abs("")
-	assert.Nil(err)
+	assert.Nil(err, fmt.Sprintf("err should be nil, but got: %s", err))
 	assert.Equal(cwd, name)
 
 	name, err = Abs("a")
@@ -137,15 +155,21 @@ func TestAbs(t *testing.T) {
 	assert.Nil(err)
 	assert.Equal(filepath.Join(cwd, "ab"), name)
 
-	name, err = Abs("/")
+	inputdir := "/"
+	if runtime.GOOS == "windows" {
+		inputdir = "c:\\"
+	}
+	name, err = Abs(inputdir)
 	assert.Nil(err)
-	assert.Equal("/", name)
+	assert.Equal(inputdir, name)
 
-	name, err = Abs("/a")
+	inputdir = "/a"
+	if runtime.GOOS == "windows" {
+		inputdir = "c:\\a"
+	}
+	name, err = Abs(inputdir)
 	assert.Nil(err)
-	assert.Equal("/a", name)
-
-	os.Setenv("HOME", home)
+	assert.Equal(inputdir, name)
 }
 
 func TestAbsJoin(t *testing.T) {
@@ -165,10 +189,18 @@ func TestAbsJoin(t *testing.T) {
 		os.RemoveAll(dir)
 	}(tmpdir)
 
-	home = os.Getenv("HOME")
-	os.Setenv("HOME", tmpdir)
+	home, err = HomeDir()
+	assert.Nil(err)
+	defer func(home string) {
+		SetHome(home)
+	}(home)
+
+	SetHome(tmpdir)
 
 	cwd := "/some/dir"
+	if runtime.GOOS == "windows" {
+		cwd = "c:\\some\\dir"
+	}
 
 	name, err = AbsJoin(cwd, "")
 	assert.Nil(err)
@@ -198,15 +230,21 @@ func TestAbsJoin(t *testing.T) {
 	assert.Nil(err)
 	assert.Equal(filepath.Join(cwd, "ab"), name)
 
-	name, err = AbsJoin(cwd, "/")
+	inputdir := "/"
+	if runtime.GOOS == "windows" {
+		inputdir = "c:\\"
+	}
+	name, err = AbsJoin(cwd, inputdir)
 	assert.Nil(err)
-	assert.Equal("/", name)
+	assert.Equal(inputdir, name)
 
-	name, err = AbsJoin(cwd, "/a")
+	inputdir = "/a"
+	if runtime.GOOS == "windows" {
+		inputdir = "c:\\a"
+	}
+	name, err = AbsJoin(cwd, inputdir)
 	assert.Nil(err)
-	assert.Equal("/a", name)
-
-	os.Setenv("HOME", home)
+	assert.Equal(inputdir, name)
 }
 
 func TestFindGitDir(t *testing.T) {
@@ -216,9 +254,9 @@ func TestFindGitDir(t *testing.T) {
 		gitdir  string
 		workdir string
 		cfg     string
+		home    string
+		assert  = assert.New(t)
 	)
-
-	home := os.Getenv("HOME")
 
 	tmpdir, err := ioutil.TempDir("", "goconfig")
 	if err != nil {
@@ -228,106 +266,110 @@ func TestFindGitDir(t *testing.T) {
 		os.RemoveAll(dir)
 	}(tmpdir)
 
-	os.Setenv("HOME", tmpdir)
+	home, err = HomeDir()
+	assert.Nil(err)
+	defer func(home string) {
+		SetHome(home)
+	}(home)
+
+	SetHome(tmpdir)
 
 	// find in: bare.git
 	gitdir = filepath.Join(tmpdir, "bare.git")
 	cmd := exec.Command("git", "init", "--bare", gitdir, "--")
-	assert.Equal(t, nil, cmd.Run())
+	assert.Nil(cmd.Run())
 	dir, err = FindGitDir(gitdir)
-	assert.Equal(t, nil, err)
-	assert.Equal(t, gitdir, dir)
+	assert.Nil(err)
+	assert.Equal(gitdir, dir)
 
 	cfg, err = FindGitConfig(gitdir)
-	assert.Equal(t, nil, err)
-	assert.Equal(t, filepath.Join(gitdir, "config"), cfg)
+	assert.Nil(err)
+	assert.Equal(filepath.Join(gitdir, "config"), cfg)
 
 	// find in: bare.git/objects/pack
 	dir, err = FindGitDir(filepath.Join(gitdir, "objects", "pack"))
-	assert.Equal(t, nil, err)
-	assert.Equal(t, gitdir, dir)
+	assert.Nil(err)
+	assert.Equal(gitdir, dir)
 
 	cfg, err = FindGitConfig(filepath.Join(gitdir, "objects", "pack"))
-	assert.Equal(t, nil, err)
-	assert.Equal(t, filepath.Join(gitdir, "config"), cfg)
+	assert.Nil(err)
+	assert.Equal(filepath.Join(gitdir, "config"), cfg)
 
 	// create repo2 with gitdir file repo2/.git
 	repo2 := filepath.Join(tmpdir, "repo2")
 	err = os.MkdirAll(filepath.Join(repo2, "a", "b"), 0755)
-	assert.Equal(t, nil, err)
+	assert.Equal(nil, err)
 	err = ioutil.WriteFile(filepath.Join(repo2, ".git"),
 		[]byte("gitdir: ../bare.git"),
 		0644)
-	assert.Equal(t, nil, err)
+	assert.Nil(err)
 
 	// find in: repo2/a/b/c
 	dir, err = FindGitDir(filepath.Join(repo2, "a", "b", "c"))
-	assert.Equal(t, nil, err)
-	assert.Equal(t, gitdir, dir)
+	assert.Nil(err)
+	assert.Equal(gitdir, dir)
 
 	cfg, err = FindGitConfig(filepath.Join(repo2, "a", "b", "c"))
-	assert.Equal(t, nil, err)
-	assert.Equal(t, filepath.Join(gitdir, "config"), cfg)
+	assert.Nil(err)
+	assert.Equal(filepath.Join(gitdir, "config"), cfg)
 
 	// create bad gitdir file: repo2.git
 	err = ioutil.WriteFile(filepath.Join(repo2, ".git"),
 		[]byte("../bare.git"),
 		0644)
-	assert.Equal(t, nil, err)
+	assert.Nil(err)
 
 	// fail to find in repo2/a/b/c (bad gitdir file)
 	dir, err = FindGitDir(filepath.Join(repo2, "a", "b", "c"))
-	assert.NotEqual(t, nil, err)
-	assert.Equal(t, "", dir)
+	assert.NotNil(err)
+	assert.Equal("", dir)
 
 	cfg, err = FindGitConfig(filepath.Join(repo2, "a", "b", "c"))
-	assert.NotEqual(t, nil, err)
-	assert.Equal(t, "", cfg)
+	assert.NotNil(err)
+	assert.Equal("", cfg)
 
 	// create worktree
 	workdir = filepath.Join(tmpdir, "workdir")
 	cmd = exec.Command("git", "init", workdir, "--")
-	assert.Equal(t, nil, cmd.Run())
+	assert.Nil(cmd.Run())
 
 	gitdir = filepath.Join(workdir, ".git")
 	err = os.MkdirAll(filepath.Join(workdir, "a", "b"), 0755)
-	assert.Equal(t, nil, err)
+	assert.Nil(err)
 
 	// find in workdir
 	dir, err = FindGitDir(workdir)
-	assert.Equal(t, nil, err)
-	assert.Equal(t, gitdir, dir)
+	assert.Nil(err)
+	assert.Equal(gitdir, dir)
 
 	cfg, err = FindGitConfig(workdir)
-	assert.Equal(t, nil, err)
-	assert.Equal(t, filepath.Join(gitdir, "config"), cfg)
+	assert.Nil(err)
+	assert.Equal(filepath.Join(gitdir, "config"), cfg)
 
 	// find in workdir/.git
 	dir, err = FindGitDir(gitdir)
-	assert.Equal(t, nil, err)
-	assert.Equal(t, gitdir, dir)
+	assert.Nil(err)
+	assert.Equal(gitdir, dir)
 
 	cfg, err = FindGitConfig(gitdir)
-	assert.Equal(t, nil, err)
-	assert.Equal(t, filepath.Join(gitdir, "config"), cfg)
+	assert.Nil(err)
+	assert.Equal(filepath.Join(gitdir, "config"), cfg)
 
 	// find in workdir/.git
 	dir, err = FindGitDir(filepath.Join(workdir, "a", "b", "c"))
-	assert.Equal(t, nil, err)
-	assert.Equal(t, gitdir, dir)
+	assert.Nil(err)
+	assert.Equal(gitdir, dir)
 
 	cfg, err = FindGitConfig(filepath.Join(workdir, "a", "b", "c"))
-	assert.Equal(t, nil, err)
-	assert.Equal(t, filepath.Join(gitdir, "config"), cfg)
+	assert.Nil(err)
+	assert.Equal(filepath.Join(gitdir, "config"), cfg)
 
 	// fail to find in tmpdir
 	dir, err = FindGitDir(tmpdir)
-	assert.Equal(t, "", dir)
-	assert.Equal(t, ErrNotInGitDir, err)
+	assert.Equal("", dir)
+	assert.Equal(ErrNotInGitDir, err)
 
 	cfg, err = FindGitConfig(tmpdir)
-	assert.Equal(t, ErrNotInGitDir, err)
-	assert.Equal(t, "", cfg)
-
-	os.Setenv("HOME", home)
+	assert.Equal(ErrNotInGitDir, err)
+	assert.Equal("", cfg)
 }
