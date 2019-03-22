@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"reflect"
 	"sort"
 	"strconv"
 	"strings"
@@ -56,13 +55,12 @@ type GitConfigValue struct {
 
 // Keys returns sorted kesy in one section
 func (v GitConfigKeys) Keys() []string {
-	keys := reflect.ValueOf(v).MapKeys()
-	strkeys := make([]string, len(keys))
-	for i := 0; i < len(keys); i++ {
-		strkeys[i] = keys[i].String()
+	keys := []string{}
+	for k := range v {
+		keys = append(keys, k)
 	}
-	sort.Strings(strkeys)
-	return strkeys
+	sort.Strings(keys)
+	return keys
 }
 
 // Set is used to set value
@@ -88,13 +86,12 @@ func NewGitConfig() GitConfig {
 
 // Sections returns sorted sections
 func (v GitConfig) Sections() []string {
-	keys := reflect.ValueOf(v).MapKeys()
-	strkeys := make([]string, len(keys))
-	for i := 0; i < len(keys); i++ {
-		strkeys[i] = keys[i].String()
+	keys := []string{}
+	for k := range v {
+		keys = append(keys, k)
 	}
-	sort.Strings(strkeys)
-	return strkeys
+	sort.Strings(keys)
+	return keys
 }
 
 // Keys returns all config variable keys (in lower case)
