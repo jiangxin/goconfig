@@ -423,3 +423,20 @@ func TestSetUnset(t *testing.T) {
 
 	assert.Equal("\n", all.String())
 }
+
+func TestNonStringInterface(t *testing.T) {
+	assert := assert.New(t)
+
+	cfg := NewGitConfig()
+	cfg.Add("sect.key1", 100)
+	cfg.Add("sect.key2", true)
+	cfg.Set("sect.key3", false)
+	cfg.Set("sect.key4", []byte("hello"))
+	cfg.Set("sect.key5", "world")
+
+	assert.Equal("100", cfg.Get("sect.key1"))
+	assert.Equal("true", cfg.Get("sect.key2"))
+	assert.Equal("false", cfg.Get("sect.key3"))
+	assert.Equal("hello", cfg.Get("sect.key4"))
+	assert.Equal("world", cfg.Get("sect.key5"))
+}
