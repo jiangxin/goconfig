@@ -23,6 +23,45 @@ const (
 	ScopeMask = ^ScopeInclude
 )
 
+func toString(v interface{}) string {
+	var s string
+	switch value := v.(type) {
+	case string:
+		s = value
+	case bool:
+		s = strconv.FormatBool(value)
+	case float32:
+		s = strconv.FormatFloat(float64(value), 'g', -1, 64)
+	case float64:
+		s = strconv.FormatFloat(value, 'g', -1, 64)
+	case int:
+		s = strconv.FormatInt(int64(value), 10)
+	case int8:
+		s = strconv.FormatInt(int64(value), 10)
+	case int16:
+		s = strconv.FormatInt(int64(value), 10)
+	case int32:
+		s = strconv.FormatInt(int64(value), 10)
+	case int64:
+		s = strconv.FormatInt(value, 10)
+	case uint:
+		s = strconv.FormatUint(uint64(value), 10)
+	case uint8:
+		s = strconv.FormatUint(uint64(value), 10)
+	case uint16:
+		s = strconv.FormatUint(uint64(value), 10)
+	case uint32:
+		s = strconv.FormatUint(uint64(value), 10)
+	case uint64:
+		s = strconv.FormatUint(value, 10)
+	case []byte:
+		s = string(value)
+	default:
+		s = fmt.Sprintf("%s", value)
+	}
+	return s
+}
+
 // String show user friendly display of scope
 func (v *Scope) String() string {
 	i := int(*v)
@@ -64,8 +103,8 @@ func (v GitConfigKeys) Keys() []string {
 }
 
 // Set is used to set value
-func (v *GitConfigValue) Set(value string) {
-	v.value = value
+func (v *GitConfigValue) Set(value interface{}) {
+	v.value = toString(value)
 }
 
 // Value is used to show value
@@ -107,7 +146,7 @@ func (v GitConfig) Keys() []string {
 }
 
 // Set will replace old config variable
-func (v GitConfig) Set(key, value string) {
+func (v GitConfig) Set(key string, value interface{}) {
 	s, k := toSectionKey(key)
 	keys := v[s]
 	if keys == nil {
@@ -124,7 +163,7 @@ func (v GitConfig) Set(key, value string) {
 	for i := len(keys[k]) - 1; i >= 0; i-- {
 		if keys[k][i].scope == ScopeSelf {
 			found = true
-			keys[k][i].value = value
+			keys[k][i].value = toString(value)
 			break
 		}
 	}
@@ -133,7 +172,7 @@ func (v GitConfig) Set(key, value string) {
 		keys[k] = append(keys[k],
 			&GitConfigValue{
 				scope: ScopeSelf,
-				value: value,
+				value: toString(value),
 			})
 	}
 }
@@ -170,13 +209,13 @@ func (v GitConfig) unset(key string, all bool) {
 }
 
 // Add will add user input key-value pair
-func (v GitConfig) Add(key, value string) {
+func (v GitConfig) Add(key string, value interface{}) {
 	s, k := toSectionKey(key)
 	v._add(s, k, value)
 }
 
 // _add key/value to config variables
-func (v GitConfig) _add(section, key, value string) {
+func (v GitConfig) _add(section, key string, value interface{}) {
 	// section, and key are always in lower case
 	if _, ok := v[section]; !ok {
 		v[section] = make(GitConfigKeys)
@@ -185,10 +224,11 @@ func (v GitConfig) _add(section, key, value string) {
 	if _, ok := v[section][key]; !ok {
 		v[section][key] = []*GitConfigValue{}
 	}
+
 	v[section][key] = append(v[section][key],
 		&GitConfigValue{
 			scope: ScopeSelf,
-			value: value,
+			value: toString(value),
 		})
 }
 
