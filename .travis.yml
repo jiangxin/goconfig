@@ -1,18 +1,11 @@
 language: go
 # cannot install golint for go version 1.8.x and lower
 go:
-  - 1.9.x
   - 1.11.x
-  - 1.12.x
 env:
   - GO111MODULE=on
 os:
   - linux
-  - osx
-  - windows
-before_script:
-  - go get -v github.com/spf13/pflag
-  - go get -v github.com/stretchr/testify/assert
 # Windows don't know how to build using Makefile
 script:
   - go build cmd/goconfig/main.go
