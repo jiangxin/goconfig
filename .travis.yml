@@ -6,7 +6,5 @@ env:
   - GO111MODULE=on
 os:
   - linux
-# Windows don't know how to build using Makefile
-script:
-  - go build cmd/goconfig/main.go
-  - go test ./...
+  - osx
+  - windows
