@@ -13,8 +13,8 @@ const (
 	gitSystemConfigEnv = "TEST_GIT_SYSTEM_CONFIG"
 )
 
-// HomeDir returns home directory
-func HomeDir() (string, error) {
+// homeDir returns home directory
+func homeDir() (string, error) {
 	var (
 		home string
 	)
@@ -47,7 +47,7 @@ func xdgConfigHome(file string) (string, error) {
 		return filepath.Join(home, "git", file), nil
 	}
 
-	home, err = HomeDir()
+	home, err = homeDir()
 	if err != nil {
 		return "", err
 	}
@@ -55,13 +55,13 @@ func xdgConfigHome(file string) (string, error) {
 	return filepath.Join(home, ".config", "git", file), nil
 }
 
-// ExpendHome expends path prefix "~/" to home dir
-func ExpendHome(name string) (string, error) {
+// expendHome expends path prefix "~/" to home dir
+func expendHome(name string) (string, error) {
 	if filepath.IsAbs(name) {
 		return name, nil
 	}
 
-	home, err := HomeDir()
+	home, err := homeDir()
 	if err != nil {
 		return "", err
 	}
@@ -75,8 +75,8 @@ func ExpendHome(name string) (string, error) {
 	return filepath.Join(home, name), nil
 }
 
-// Abs returns absolute path and will expend homedir if path has "~/' prefix
-func Abs(name string) (string, error) {
+// absPath returns absolute path and will expend homedir if path has "~/' prefix
+func absPath(name string) (string, error) {
 	if name == "" {
 		return os.Getwd()
 	}
@@ -86,14 +86,14 @@ func Abs(name string) (string, error) {
 	}
 
 	if len(name) > 0 && name[0] == '~' && (len(name) == 1 || name[1] == '/' || name[1] == '\\') {
-		return ExpendHome(name)
+		return expendHome(name)
 	}
 
 	return filepath.Abs(name)
 }
 
-// AbsJoin returns absolute path, and use <dir> as parent dir for relative path
-func AbsJoin(dir, name string) (string, error) {
+// absJoin returns absolute path, and use <dir> as parent dir for relative path
+func absJoin(dir, name string) (string, error) {
 	if name == "" {
 		return filepath.Abs(dir)
 	}
@@ -103,14 +103,14 @@ func AbsJoin(dir, name string) (string, error) {
 	}
 
 	if len(name) > 0 && name[0] == '~' && (len(name) == 1 || name[1] == '/' || name[1] == '\\') {
-		return ExpendHome(name)
+		return expendHome(name)
 	}
 
-	return Abs(filepath.Join(dir, name))
+	return absPath(filepath.Join(dir, name))
 }
 
-// IsGitDir test whether dir is a valid git dir
-func IsGitDir(dir string) bool {
+// isGitDir test whether dir is a valid git dir
+func isGitDir(dir string) bool {
 	var (
 		err error
 		fi  os.FileInfo
@@ -134,18 +134,18 @@ func IsGitDir(dir string) bool {
 	return true
 }
 
-// FindGitDir searches git dir
-func FindGitDir(dir string) (string, error) {
+// findGitDir searches git dir
+func findGitDir(dir string) (string, error) {
 	var err error
 
-	dir, err = Abs(dir)
+	dir, err = absPath(dir)
 	if err != nil {
 		return "", err
 	}
 
 	for {
 		// Check if is in a bare repo
-		if IsGitDir(dir) {
+		if isGitDir(dir) {
 			return dir, nil
 		}
 
@@ -161,7 +161,7 @@ func FindGitDir(dir string) (string, error) {
 			}
 			continue
 		} else if fi.IsDir() {
-			if IsGitDir(gitdir) {
+			if isGitDir(gitdir) {
 				return gitdir, nil
 			}
 			return "", fmt.Errorf("corrupt git dir: %s", gitdir)
@@ -176,12 +176,12 @@ func FindGitDir(dir string) (string, error) {
 			if strings.HasPrefix(line, "gitdir:") {
 				realgit := strings.TrimSpace(strings.TrimPrefix(line, "gitdir:"))
 				if !filepath.IsAbs(realgit) {
-					realgit, err = AbsJoin(filepath.Dir(gitdir), realgit)
+					realgit, err = absJoin(filepath.Dir(gitdir), realgit)
 					if err != nil {
 						return "", err
 					}
 				}
-				if IsGitDir(realgit) {
+				if isGitDir(realgit) {
 					return realgit, nil
 				}
 				return "", fmt.Errorf("gitdir '%s' points to corrupt git repo: %s", gitdir, realgit)
@@ -194,7 +194,7 @@ func FindGitDir(dir string) (string, error) {
 
 // FindGitConfig returns local git config file
 func FindGitConfig(dir string) (string, error) {
-	dir, err := FindGitDir(dir)
+	dir, err := findGitDir(dir)
 	if err == nil {
 		return filepath.Join(dir, "config"), nil
 	}
@@ -224,7 +224,7 @@ func GlobalConfigFile() (string, error) {
 
 	// xdg config not exist, use ~/.gitconfig
 	if _, err := os.Stat(file); err != nil {
-		file, err = ExpendHome(".gitconfig")
+		file, err = expendHome(".gitconfig")
 		if err != nil {
 			return "", err
 		}
@@ -232,8 +232,8 @@ func GlobalConfigFile() (string, error) {
 	return file, nil
 }
 
-// UnsetHome unsets HOME related environments
-func UnsetHome() {
+// unsetHome unsets HOME related environments
+func unsetHome() {
 	if runtime.GOOS == "windows" {
 		os.Unsetenv("USERPROFILE")
 		os.Unsetenv("HOMEDRIVE")
@@ -242,8 +242,8 @@ func UnsetHome() {
 	os.Unsetenv("HOME")
 }
 
-// SetHome sets proper HOME environments
-func SetHome(home string) {
+// setHome sets proper HOME environments
+func setHome(home string) {
 	if runtime.GOOS == "windows" {
 		os.Setenv("USERPROFILE", home)
 		if strings.Contains(home, ":\\") {

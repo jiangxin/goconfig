@@ -82,7 +82,7 @@ func (cf *parser) parse() (GitConfig, error) {
 		}
 		cfg._add(name, key, value)
 		if name == "include" && key == "path" {
-			file, err := AbsJoin(path.Dir(cf.filename), value)
+			file, err := absJoin(path.Dir(cf.filename), value)
 			if err != nil {
 				return nil, err
 			}
@@ -103,7 +103,7 @@ func (cf *parser) parse() (GitConfig, error) {
 				if err != nil {
 					return cfg, err
 				}
-				cfg.Merge(config, ScopeSelf|ScopeInclude)
+				cfg.merge(config, ScopeSelf|ScopeInclude)
 			}
 		}
 	}

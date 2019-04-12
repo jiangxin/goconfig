@@ -27,12 +27,12 @@ func TestLoadFileNotExist(t *testing.T) {
 		os.RemoveAll(dir)
 	}(tmpdir)
 
-	home, err = HomeDir()
+	home, err = homeDir()
 	assert.Nil(err)
 	defer func(home string) {
-		SetHome(home)
+		setHome(home)
 	}(home)
-	SetHome(tmpdir)
+	setHome(tmpdir)
 
 	sysConfigFile := filepath.Join(tmpdir, "test.config")
 	os.Setenv(gitSystemConfigEnv, sysConfigFile)
@@ -59,12 +59,12 @@ func TestLoadNotGitdir(t *testing.T) {
 		os.RemoveAll(dir)
 	}(tmpdir)
 
-	home, err = HomeDir()
+	home, err = homeDir()
 	assert.Nil(err)
 	defer func(home string) {
-		SetHome(home)
+		setHome(home)
 	}(home)
-	SetHome(tmpdir)
+	setHome(tmpdir)
 
 	sysConfigFile := filepath.Join(tmpdir, "test.config")
 	os.Setenv(gitSystemConfigEnv, sysConfigFile)
@@ -90,12 +90,12 @@ func TestLoadAllFileNotExist(t *testing.T) {
 		os.RemoveAll(dir)
 	}(tmpdir)
 
-	home, err = HomeDir()
+	home, err = homeDir()
 	assert.Nil(err)
 	defer func(home string) {
-		SetHome(home)
+		setHome(home)
 	}(home)
-	SetHome(tmpdir)
+	setHome(tmpdir)
 
 	sysConfigFile := filepath.Join(tmpdir, "test.config")
 	os.Setenv(gitSystemConfigEnv, sysConfigFile)
@@ -122,12 +122,12 @@ func TestLoadAllNotGitdir(t *testing.T) {
 		os.RemoveAll(dir)
 	}(tmpdir)
 
-	home, err = HomeDir()
+	home, err = homeDir()
 	assert.Nil(err)
 	defer func(home string) {
-		SetHome(home)
+		setHome(home)
 	}(home)
-	SetHome(tmpdir)
+	setHome(tmpdir)
 
 	sysConfigFile := filepath.Join(tmpdir, "test.config")
 	os.Setenv(gitSystemConfigEnv, sysConfigFile)
@@ -223,12 +223,12 @@ func TestLoadGlobalConfig(t *testing.T) {
 		os.RemoveAll(dir)
 	}(tmpdir)
 
-	home, err = HomeDir()
+	home, err = homeDir()
 	assert.Nil(err)
 	defer func(home string) {
-		SetHome(home)
+		setHome(home)
 	}(home)
-	SetHome(tmpdir)
+	setHome(tmpdir)
 
 	cfg, err := GlobalConfig()
 	assert.Nil(err)
@@ -317,12 +317,12 @@ func TestRepoConfig(t *testing.T) {
 	assert.NotNil(sysConfig)
 
 	// Create user config
-	home, err = HomeDir()
+	home, err = homeDir()
 	assert.Nil(err)
 	defer func(home string) {
-		SetHome(home)
+		setHome(home)
 	}(home)
-	SetHome(tmpdir)
+	setHome(tmpdir)
 
 	userCfgFile, err := GlobalConfigFile()
 	assert.Nil(err)
@@ -418,12 +418,12 @@ func TestAllConfig(t *testing.T) {
 	assert.NotNil(sysConfig)
 
 	// Create user config
-	home, err = HomeDir()
+	home, err = homeDir()
 	assert.Nil(err)
 	defer func(home string) {
-		SetHome(home)
+		setHome(home)
 	}(home)
-	SetHome(tmpdir)
+	setHome(tmpdir)
 
 	userCfgFile, err := GlobalConfigFile()
 	assert.Nil(err)
@@ -500,12 +500,12 @@ func TestSaveConfig(t *testing.T) {
 		os.RemoveAll(dir)
 	}(tmpdir)
 
-	home, err = HomeDir()
+	home, err = homeDir()
 	assert.Nil(err)
 	defer func(home string) {
-		SetHome(home)
+		setHome(home)
 	}(home)
-	SetHome(tmpdir)
+	setHome(tmpdir)
 
 	// Create system config
 	cfgFile := filepath.Join(tmpdir, "gitconfig")

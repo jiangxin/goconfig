@@ -29,51 +29,51 @@ func TestExpendHome(t *testing.T) {
 		os.RemoveAll(dir)
 	}(tmpdir)
 
-	home, err = HomeDir()
+	home, err = homeDir()
 	assert.Nil(err)
 	defer func(home string) {
-		SetHome(home)
+		setHome(home)
 	}(home)
 
-	UnsetHome()
-	name, err = HomeDir()
+	unsetHome()
+	name, err = homeDir()
 	assert.NotNil(err)
 	assert.Equal("", name)
 
-	name, err = ExpendHome("")
+	name, err = expendHome("")
 	assert.NotNil(err)
 	assert.Equal("", name)
 
-	SetHome(tmpdir)
+	setHome(tmpdir)
 
-	name, err = HomeDir()
+	name, err = homeDir()
 	assert.Equal(tmpdir, name)
 
-	name, err = ExpendHome("")
+	name, err = expendHome("")
 	assert.Nil(err)
 	assert.Equal(tmpdir, name)
 
-	name, err = ExpendHome("a")
+	name, err = expendHome("a")
 	assert.Nil(err)
 	assert.Equal(filepath.Join(tmpdir, "a"), name)
 
-	name, err = ExpendHome("~a")
+	name, err = expendHome("~a")
 	assert.Nil(err)
 	assert.Equal(filepath.Join(tmpdir, "~a"), name)
 
-	name, err = ExpendHome("~")
+	name, err = expendHome("~")
 	assert.Nil(err)
 	assert.Equal(tmpdir, name)
 
-	name, err = ExpendHome("~/")
+	name, err = expendHome("~/")
 	assert.Nil(err)
 	assert.Equal(tmpdir, name)
 
-	name, err = ExpendHome("~/a")
+	name, err = expendHome("~/a")
 	assert.Nil(err)
 	assert.Equal(filepath.Join(tmpdir, "a"), name)
 
-	name, err = ExpendHome("ab")
+	name, err = expendHome("ab")
 	assert.Nil(err)
 	assert.Equal(filepath.Join(tmpdir, "ab"), name)
 
@@ -81,7 +81,7 @@ func TestExpendHome(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		inputdir = "c:\\"
 	}
-	name, err = ExpendHome(inputdir)
+	name, err = expendHome(inputdir)
 	assert.Nil(err)
 	assert.Equal(inputdir, name)
 
@@ -89,7 +89,7 @@ func TestExpendHome(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		inputdir = "c:\\a"
 	}
-	name, err = ExpendHome(inputdir)
+	name, err = expendHome(inputdir)
 	assert.Nil(err)
 	assert.Equal(inputdir, name)
 
@@ -112,46 +112,46 @@ func TestAbs(t *testing.T) {
 		os.RemoveAll(dir)
 	}(tmpdir)
 
-	home, err = HomeDir()
+	home, err = homeDir()
 	assert.Nil(err)
 	defer func(home string) {
-		SetHome(home)
+		setHome(home)
 	}(home)
 
-	UnsetHome()
-	name, err = Abs("~/")
+	unsetHome()
+	name, err = absPath("~/")
 	assert.NotNil(err)
 	assert.Equal("", name)
 
-	SetHome(tmpdir)
+	setHome(tmpdir)
 	cwd, err := os.Getwd()
 	assert.Nil(err)
 
-	name, err = Abs("")
+	name, err = absPath("")
 	assert.Nil(err, fmt.Sprintf("err should be nil, but got: %s", err))
 	assert.Equal(cwd, name)
 
-	name, err = Abs("a")
+	name, err = absPath("a")
 	assert.Nil(err)
 	assert.Equal(filepath.Join(cwd, "a"), name)
 
-	name, err = Abs("~a")
+	name, err = absPath("~a")
 	assert.Nil(err)
 	assert.Equal(filepath.Join(cwd, "~a"), name)
 
-	name, err = Abs("~")
+	name, err = absPath("~")
 	assert.Nil(err)
 	assert.Equal(tmpdir, name)
 
-	name, err = Abs("~/")
+	name, err = absPath("~/")
 	assert.Nil(err)
 	assert.Equal(tmpdir, name)
 
-	name, err = Abs("~/a")
+	name, err = absPath("~/a")
 	assert.Nil(err)
 	assert.Equal(filepath.Join(tmpdir, "a"), name)
 
-	name, err = Abs("ab")
+	name, err = absPath("ab")
 	assert.Nil(err)
 	assert.Equal(filepath.Join(cwd, "ab"), name)
 
@@ -159,7 +159,7 @@ func TestAbs(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		inputdir = "c:\\"
 	}
-	name, err = Abs(inputdir)
+	name, err = absPath(inputdir)
 	assert.Nil(err)
 	assert.Equal(inputdir, name)
 
@@ -167,7 +167,7 @@ func TestAbs(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		inputdir = "c:\\a"
 	}
-	name, err = Abs(inputdir)
+	name, err = absPath(inputdir)
 	assert.Nil(err)
 	assert.Equal(inputdir, name)
 }
@@ -189,44 +189,44 @@ func TestAbsJoin(t *testing.T) {
 		os.RemoveAll(dir)
 	}(tmpdir)
 
-	home, err = HomeDir()
+	home, err = homeDir()
 	assert.Nil(err)
 	defer func(home string) {
-		SetHome(home)
+		setHome(home)
 	}(home)
 
-	SetHome(tmpdir)
+	setHome(tmpdir)
 
 	cwd := "/some/dir"
 	if runtime.GOOS == "windows" {
 		cwd = "c:\\some\\dir"
 	}
 
-	name, err = AbsJoin(cwd, "")
+	name, err = absJoin(cwd, "")
 	assert.Nil(err)
 	assert.Equal(cwd, name)
 
-	name, err = AbsJoin(cwd, "a")
+	name, err = absJoin(cwd, "a")
 	assert.Nil(err)
 	assert.Equal(filepath.Join(cwd, "a"), name)
 
-	name, err = AbsJoin(cwd, "~a")
+	name, err = absJoin(cwd, "~a")
 	assert.Nil(err)
 	assert.Equal(filepath.Join(cwd, "~a"), name)
 
-	name, err = AbsJoin(cwd, "~")
+	name, err = absJoin(cwd, "~")
 	assert.Nil(err)
 	assert.Equal(tmpdir, name)
 
-	name, err = AbsJoin(cwd, "~/")
+	name, err = absJoin(cwd, "~/")
 	assert.Nil(err)
 	assert.Equal(tmpdir, name)
 
-	name, err = AbsJoin(cwd, "~/a")
+	name, err = absJoin(cwd, "~/a")
 	assert.Nil(err)
 	assert.Equal(filepath.Join(tmpdir, "a"), name)
 
-	name, err = AbsJoin(cwd, "ab")
+	name, err = absJoin(cwd, "ab")
 	assert.Nil(err)
 	assert.Equal(filepath.Join(cwd, "ab"), name)
 
@@ -234,7 +234,7 @@ func TestAbsJoin(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		inputdir = "c:\\"
 	}
-	name, err = AbsJoin(cwd, inputdir)
+	name, err = absJoin(cwd, inputdir)
 	assert.Nil(err)
 	assert.Equal(inputdir, name)
 
@@ -242,7 +242,7 @@ func TestAbsJoin(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		inputdir = "c:\\a"
 	}
-	name, err = AbsJoin(cwd, inputdir)
+	name, err = absJoin(cwd, inputdir)
 	assert.Nil(err)
 	assert.Equal(inputdir, name)
 }
@@ -266,19 +266,19 @@ func TestFindGitDir(t *testing.T) {
 		os.RemoveAll(dir)
 	}(tmpdir)
 
-	home, err = HomeDir()
+	home, err = homeDir()
 	assert.Nil(err)
 	defer func(home string) {
-		SetHome(home)
+		setHome(home)
 	}(home)
 
-	SetHome(tmpdir)
+	setHome(tmpdir)
 
 	// find in: bare.git
 	gitdir = filepath.Join(tmpdir, "bare.git")
 	cmd := exec.Command("git", "init", "--bare", gitdir, "--")
 	assert.Nil(cmd.Run())
-	dir, err = FindGitDir(gitdir)
+	dir, err = findGitDir(gitdir)
 	assert.Nil(err)
 	assert.Equal(gitdir, dir)
 
@@ -287,7 +287,7 @@ func TestFindGitDir(t *testing.T) {
 	assert.Equal(filepath.Join(gitdir, "config"), cfg)
 
 	// find in: bare.git/objects/pack
-	dir, err = FindGitDir(filepath.Join(gitdir, "objects", "pack"))
+	dir, err = findGitDir(filepath.Join(gitdir, "objects", "pack"))
 	assert.Nil(err)
 	assert.Equal(gitdir, dir)
 
@@ -305,7 +305,7 @@ func TestFindGitDir(t *testing.T) {
 	assert.Nil(err)
 
 	// find in: repo2/a/b/c
-	dir, err = FindGitDir(filepath.Join(repo2, "a", "b", "c"))
+	dir, err = findGitDir(filepath.Join(repo2, "a", "b", "c"))
 	assert.Nil(err)
 	assert.Equal(gitdir, dir)
 
@@ -320,7 +320,7 @@ func TestFindGitDir(t *testing.T) {
 	assert.Nil(err)
 
 	// fail to find in repo2/a/b/c (bad gitdir file)
-	dir, err = FindGitDir(filepath.Join(repo2, "a", "b", "c"))
+	dir, err = findGitDir(filepath.Join(repo2, "a", "b", "c"))
 	assert.NotNil(err)
 	assert.Equal("", dir)
 
@@ -338,7 +338,7 @@ func TestFindGitDir(t *testing.T) {
 	assert.Nil(err)
 
 	// find in workdir
-	dir, err = FindGitDir(workdir)
+	dir, err = findGitDir(workdir)
 	assert.Nil(err)
 	assert.Equal(gitdir, dir)
 
@@ -347,7 +347,7 @@ func TestFindGitDir(t *testing.T) {
 	assert.Equal(filepath.Join(gitdir, "config"), cfg)
 
 	// find in workdir/.git
-	dir, err = FindGitDir(gitdir)
+	dir, err = findGitDir(gitdir)
 	assert.Nil(err)
 	assert.Equal(gitdir, dir)
 
@@ -356,7 +356,7 @@ func TestFindGitDir(t *testing.T) {
 	assert.Equal(filepath.Join(gitdir, "config"), cfg)
 
 	// find in workdir/.git
-	dir, err = FindGitDir(filepath.Join(workdir, "a", "b", "c"))
+	dir, err = findGitDir(filepath.Join(workdir, "a", "b", "c"))
 	assert.Nil(err)
 	assert.Equal(gitdir, dir)
 
@@ -365,7 +365,7 @@ func TestFindGitDir(t *testing.T) {
 	assert.Equal(filepath.Join(gitdir, "config"), cfg)
 
 	// fail to find in tmpdir
-	dir, err = FindGitDir(tmpdir)
+	dir, err = findGitDir(tmpdir)
 	assert.Equal("", dir)
 	assert.Equal(ErrNotInGitDir, err)
 
