@@ -215,7 +215,7 @@ func TestMerge(t *testing.T) {
 	assert.Equal("other-c", cfg2.Get("a.c"))
 	assert.Equal("other-d", cfg2.Get("a.d"))
 
-	cfg.Merge(cfg2, ScopeInclude)
+	cfg.merge(cfg2, ScopeInclude)
 	assert.Equal("value-b", cfg.Get("a.b"))
 	assert.Equal("other-c", cfg.Get("a.c"))
 	assert.Equal("other-d", cfg.Get("a.d"))
@@ -240,7 +240,7 @@ func ExampleMerge() {
 	inc1.Add("sect1.Name3", "value-0.1.3")
 	inc1.Add("sect2.name1", "value-0.2.1")
 
-	sys.Merge(inc1, ScopeInclude)
+	sys.merge(inc1, ScopeInclude)
 
 	global := NewGitConfig()
 	global.Add("sect1.name2", "value-2.1.2")
@@ -254,13 +254,13 @@ func ExampleMerge() {
 	repo.Add("sect1.name4", "value-3.1.4")
 
 	all := NewGitConfig()
-	all.Merge(sys, ScopeSystem)
-	all.Merge(global, ScopeGlobal)
-	all.Merge(repo, ScopeSelf)
+	all.merge(sys, ScopeSystem)
+	all.merge(global, ScopeGlobal)
+	all.merge(repo, ScopeSelf)
 
 	fmt.Println()
 	for _, k := range all.Keys() {
-		for _, value := range all.GetRaw(k) {
+		for _, value := range all.getRaw(k) {
 			fmt.Printf("%s = %-8s (%s)\n", k, value.Value(), value.Scope())
 		}
 	}
@@ -308,7 +308,7 @@ func TestStringOfScope(t *testing.T) {
 	inc1.Add("sect1.Name3", "value-0.1.3")
 	inc1.Add("sect2.name1", "value-0.2.1")
 
-	sys.Merge(inc1, ScopeInclude)
+	sys.merge(inc1, ScopeInclude)
 
 	global := NewGitConfig()
 	global.Add("sect1.name2", "value-2.1.2")
@@ -323,9 +323,9 @@ func TestStringOfScope(t *testing.T) {
 	repo.Add("sect1.name4", "value-3.1.4.2")
 
 	all := NewGitConfig()
-	all.Merge(sys, ScopeSystem)
-	all.Merge(global, ScopeGlobal)
-	all.Merge(repo, ScopeSelf)
+	all.merge(sys, ScopeSystem)
+	all.merge(global, ScopeGlobal)
+	all.merge(repo, ScopeSelf)
 
 	expect := `[sect1]
 	name2 = value-3.1.2
@@ -342,13 +342,13 @@ func TestStringOfScope(t *testing.T) {
 [sect2]
 	name1 = value-0.2.1
 `
-	assert.Equal(expect, all.StringOfScope(ScopeSystem|ScopeInclude))
+	assert.Equal(expect, all.stringOfScope(ScopeSystem|ScopeInclude))
 
 	expect = `[sect1]
 	name1 = value-1.1.1
 	name2 = value-1.1.2
 `
-	assert.Equal(expect, all.StringOfScope(ScopeSystem))
+	assert.Equal(expect, all.stringOfScope(ScopeSystem))
 
 	expect = `[sect1]
 	name1 = value-1.1.1
@@ -359,7 +359,7 @@ func TestStringOfScope(t *testing.T) {
 [sect3]
 	name1 = value-2.3.1
 `
-	assert.Equal(expect, all.StringOfScope(ScopeSystem|ScopeGlobal))
+	assert.Equal(expect, all.stringOfScope(ScopeSystem|ScopeGlobal))
 
 	expect = `[sect1]
 	name1 = value-1.1.1
@@ -374,7 +374,7 @@ func TestStringOfScope(t *testing.T) {
 [sect3]
 	name1 = value-2.3.1
 `
-	assert.Equal(expect, all.StringOfScope(ScopeSystem|ScopeGlobal|ScopeSelf))
+	assert.Equal(expect, all.stringOfScope(ScopeSystem|ScopeGlobal|ScopeSelf))
 
 	expect = `[sect1]
 	name1 = value-1.1.1
@@ -392,7 +392,7 @@ func TestStringOfScope(t *testing.T) {
 [sect3]
 	name1 = value-2.3.1
 `
-	assert.Equal(expect, all.StringOfScope(ScopeAll))
+	assert.Equal(expect, all.stringOfScope(ScopeAll))
 }
 
 func TestSetUnset(t *testing.T) {
@@ -406,7 +406,7 @@ func TestSetUnset(t *testing.T) {
 	inc1.Add("sect1.name3", "value-0.1.3")
 	inc1.Add("sect2.name1", "value-0.2.1")
 
-	sys.Merge(inc1, ScopeInclude)
+	sys.merge(inc1, ScopeInclude)
 
 	global := NewGitConfig()
 	global.Add("sect1.name2", "value-2.1.2")
@@ -421,9 +421,9 @@ func TestSetUnset(t *testing.T) {
 	repo.Add("sect1.name4", "value-3.1.4.2")
 
 	all := NewGitConfig()
-	all.Merge(sys, ScopeSystem)
-	all.Merge(global, ScopeGlobal)
-	all.Merge(repo, ScopeSelf)
+	all.merge(sys, ScopeSystem)
+	all.merge(global, ScopeGlobal)
+	all.merge(repo, ScopeSelf)
 
 	all.Unset("sect1.name0")
 	assert.Equal("", all.Get("sect1.name0"))
