@@ -91,43 +91,67 @@ func TestGetBool(t *testing.T) {
 	cfg, _, err := Parse([]byte(data), "filename")
 	assert.Nil(err)
 
-	v, err := cfg.GetBool("a.t1", false)
+	v, err := cfg.GetBoolE("a.t1", false)
 	assert.Nil(err)
 	assert.True(v)
-
-	v, err = cfg.GetBool("a.t2", false)
-	assert.Nil(err)
+	v = cfg.GetBool("a.t1", false)
 	assert.True(v)
 
-	v, err = cfg.GetBool("a.t3", false)
+	v, err = cfg.GetBoolE("a.t2", false)
 	assert.Nil(err)
 	assert.True(v)
-
-	v, err = cfg.GetBool("a.t4", false)
-	assert.Nil(err)
-	assert.False(v)
-
-	v, err = cfg.GetBool("a.f1", true)
-	assert.Nil(err)
-	assert.False(v)
-
-	v, err = cfg.GetBool("a.f2", true)
-	assert.Nil(err)
-	assert.False(v)
-
-	v, err = cfg.GetBool("a.f3", true)
-	assert.Nil(err)
-	assert.False(v)
-
-	v, err = cfg.GetBool("a.f4", true)
-	assert.Nil(err)
+	v = cfg.GetBool("a.t2", false)
 	assert.True(v)
 
-	v, err = cfg.GetBool("a.x1", true)
+	v, err = cfg.GetBoolE("a.t3", false)
+	assert.Nil(err)
+	assert.True(v)
+	v = cfg.GetBool("a.t3", false)
+	assert.True(v)
+
+	v, err = cfg.GetBoolE("a.t4", false)
+	assert.Nil(err)
+	assert.False(v)
+	v = cfg.GetBool("a.t4", false)
+	assert.False(v)
+
+	v, err = cfg.GetBoolE("a.f1", true)
+	assert.Nil(err)
+	assert.False(v)
+	v = cfg.GetBool("a.f1", true)
+	assert.False(v)
+
+	v, err = cfg.GetBoolE("a.f2", true)
+	assert.Nil(err)
+	assert.False(v)
+	v = cfg.GetBool("a.f2", true)
+	assert.False(v)
+
+	v, err = cfg.GetBoolE("a.f3", true)
+	assert.Nil(err)
+	assert.False(v)
+	v = cfg.GetBool("a.f3", true)
+	assert.False(v)
+
+	v, err = cfg.GetBoolE("a.f4", true)
+	assert.Nil(err)
+	assert.True(v)
+	v = cfg.GetBool("a.f4", true)
+	assert.True(v)
+
+	v, err = cfg.GetBoolE("a.x1", true)
 	assert.Equal(ErrNotBoolValue, err)
+	v = cfg.GetBool("a.x1", true)
+	assert.True(v)
+	v = cfg.GetBool("a.x1", false)
+	assert.False(v)
 
-	v, err = cfg.GetBool("a.x2", true)
+	v, err = cfg.GetBoolE("a.x2", true)
 	assert.Equal(ErrNotBoolValue, err)
+	v = cfg.GetBool("a.x2", true)
+	assert.True(v)
+	v = cfg.GetBool("a.x2", false)
+	assert.False(v)
 }
 
 func TestGetInt(t *testing.T) {
@@ -141,23 +165,31 @@ func TestGetInt(t *testing.T) {
 	cfg, _, err := Parse([]byte(data), "filename")
 	assert.Nil(err)
 
-	v1, err := cfg.GetInt("a.i1", 0)
+	v1, err := cfg.GetIntE("a.i1", 0)
 	assert.Nil(err)
 	assert.Equal(1, v1)
+	v1 = cfg.GetInt("a.i1", 0)
+	assert.Equal(1, v1)
 
-	v2, err := cfg.GetInt64("a.i2", 0)
+	v2, err := cfg.GetInt64E("a.i2", 0)
 	assert.Nil(err)
 	assert.Equal(int64(100), v2)
+	v2 = cfg.GetInt64("a.i2", 0)
+	assert.Equal(int64(100), v2)
 
-	v3, err := cfg.GetUint64("a.i2", 0)
+	v3, err := cfg.GetUint64E("a.i2", 0)
 	assert.Nil(err)
 	assert.Equal(uint64(100), v3)
+	v3 = cfg.GetUint64("a.i2", 0)
+	assert.Equal(uint64(100), v3)
 
-	_, err = cfg.GetInt("a.i3", 0)
+	_, err = cfg.GetIntE("a.i3", 0)
 	assert.NotNil(err)
 
-	v4, err := cfg.GetInt("a.i4", 6700)
+	v4, err := cfg.GetIntE("a.i4", 6700)
 	assert.Nil(err)
+	assert.Equal(6700, v4)
+	v4 = cfg.GetInt("a.i4", 6700)
 	assert.Equal(6700, v4)
 }
 

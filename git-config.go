@@ -104,7 +104,11 @@ func (v GitConfigKeys) Keys() []string {
 
 // Set is used to set value
 func (v *GitConfigValue) Set(value interface{}) {
-	v.value = toString(value)
+	s := toString(value)
+	if s == "" {
+	} else {
+		v.value = s
+	}
 }
 
 // Value is used to show value
@@ -242,7 +246,16 @@ func (v GitConfig) Get(key string) string {
 }
 
 // GetBool gets boolean from key with default value
-func (v GitConfig) GetBool(key string, defaultValue bool) (bool, error) {
+func (v GitConfig) GetBool(key string, defaultValue bool) bool {
+	result, err := v.GetBoolE(key, defaultValue)
+	if err != nil {
+		result = defaultValue
+	}
+	return result
+}
+
+// GetBoolE gets boolean from key with default value with error
+func (v GitConfig) GetBoolE(key string, defaultValue bool) (bool, error) {
 	value := v.Get(key)
 	if value == "" {
 		return defaultValue, nil
@@ -258,7 +271,16 @@ func (v GitConfig) GetBool(key string, defaultValue bool) (bool, error) {
 }
 
 // GetInt return integer value of key with default
-func (v GitConfig) GetInt(key string, defaultValue int) (int, error) {
+func (v GitConfig) GetInt(key string, defaultValue int) int {
+	result, err := v.GetIntE(key, defaultValue)
+	if err != nil {
+		result = defaultValue
+	}
+	return result
+}
+
+// GetIntE return integer value of key with default with error
+func (v GitConfig) GetIntE(key string, defaultValue int) (int, error) {
 	value := v.Get(key)
 	if value == "" {
 		return defaultValue, nil
@@ -268,7 +290,16 @@ func (v GitConfig) GetInt(key string, defaultValue int) (int, error) {
 }
 
 // GetInt64 return int64 value of key with default
-func (v GitConfig) GetInt64(key string, defaultValue int64) (int64, error) {
+func (v GitConfig) GetInt64(key string, defaultValue int64) int64 {
+	result, err := v.GetInt64E(key, defaultValue)
+	if err != nil {
+		result = defaultValue
+	}
+	return result
+}
+
+// GetInt64E return int64 value of key with default with error
+func (v GitConfig) GetInt64E(key string, defaultValue int64) (int64, error) {
 	value := v.Get(key)
 	if value == "" {
 		return defaultValue, nil
@@ -278,7 +309,16 @@ func (v GitConfig) GetInt64(key string, defaultValue int64) (int64, error) {
 }
 
 // GetUint64 return uint64 value of key with default
-func (v GitConfig) GetUint64(key string, defaultValue uint64) (uint64, error) {
+func (v GitConfig) GetUint64(key string, defaultValue uint64) uint64 {
+	result, err := v.GetUint64E(key, defaultValue)
+	if err != nil {
+		result = defaultValue
+	}
+	return result
+}
+
+// GetUint64E return uint64 value of key with default with error
+func (v GitConfig) GetUint64E(key string, defaultValue uint64) (uint64, error) {
 	value := v.Get(key)
 	if value == "" {
 		return defaultValue, nil
