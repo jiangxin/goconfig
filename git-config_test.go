@@ -472,3 +472,18 @@ func TestNonStringInterface(t *testing.T) {
 	assert.Equal("hello", cfg.Get("sect.key4"))
 	assert.Equal("world", cfg.Get("sect.key5"))
 }
+
+func TestHasKey(t *testing.T) {
+	assert := assert.New(t)
+
+	cfg := NewGitConfig()
+	cfg.Add("sect.name1.key1", "value1")
+	cfg.Add("sect.name1.key1", "value2")
+	cfg.Add("sect.name1.key2", "")
+	cfg.Add("sect.key3", false)
+	assert.True(cfg.HasKey("sect.name1.key1"))
+	assert.True(cfg.HasKey("sect.name1.key2"))
+	assert.True(cfg.HasKey("sect.key3"))
+	assert.False(cfg.HasKey("sect.key4"))
+	assert.False(cfg.HasKey("sect.name1.key3"))
+}
