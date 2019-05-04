@@ -149,6 +149,16 @@ func (v GitConfig) Keys() []string {
 	return allKeys
 }
 
+// HasKey checks whether key is set
+func (v GitConfig) HasKey(key string) bool {
+	section, key := toSectionKey(key)
+
+	if v[section] != nil && v[section][key] != nil {
+		return true
+	}
+	return false
+}
+
 // Set will replace old config variable
 func (v GitConfig) Set(key string, value interface{}) {
 	s, k := toSectionKey(key)
