@@ -103,7 +103,7 @@ func (cf *parser) parse() (GitConfig, error) {
 				if err != nil {
 					return cfg, err
 				}
-				cfg.merge(config, ScopeSelf|ScopeInclude)
+				cfg.Merge(config, ScopeSelf|ScopeInclude)
 			}
 		}
 	}

@@ -82,15 +82,15 @@ func LoadAll(name string) (GitConfig, error) {
 	}
 
 	if sysConfig != nil {
-		cfg.merge(sysConfig, ScopeSystem)
+		cfg.Merge(sysConfig, ScopeSystem)
 	}
 
 	if globalConfig != nil {
-		cfg.merge(globalConfig, ScopeGlobal)
+		cfg.Merge(globalConfig, ScopeGlobal)
 	}
 
 	if repoConfig != nil {
-		cfg.merge(repoConfig, ScopeSelf)
+		cfg.Merge(repoConfig, ScopeSelf)
 	}
 
 	return cfg, nil

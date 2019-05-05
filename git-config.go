@@ -390,9 +390,9 @@ func toSectionKey(name string) (string, string) {
 	return section, key
 }
 
-// merge will merge another GitConfig, and new value(s) of the same key will
+// Merge will merge another GitConfig, and new value(s) of the same key will
 // append to the end of value list, and new value has higher priority.
-func (v GitConfig) merge(c GitConfig, scope scope) GitConfig {
+func (v GitConfig) Merge(c GitConfig, scope scope) GitConfig {
 	for sec, keys := range c {
 		if _, ok := v[sec]; !ok {
 			v[sec] = make(gitConfigKeys)
