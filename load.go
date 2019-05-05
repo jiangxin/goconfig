@@ -121,3 +121,15 @@ func GlobalConfig() (GitConfig, error) {
 	}
 	return Load(file)
 }
+
+// DefaultConfig returns global and system wide config
+func DefaultConfig() GitConfig {
+	cfg := NewGitConfig()
+	if sysCfg, err := SystemConfig(); err == nil && sysCfg != nil {
+		cfg.Merge(sysCfg, ScopeSystem)
+	}
+	if globalCfg, err := GlobalConfig(); err == nil && globalCfg != nil {
+		cfg.Merge(globalCfg, ScopeGlobal)
+	}
+	return cfg
+}

@@ -483,6 +483,17 @@ func TestAllConfig(t *testing.T) {
 	assert.Equal("repo 3", allConfig.Get("test.key3"))
 	assert.Equal("repo 4", allConfig.Get("test.key4"))
 	assert.Equal("repo 5", allConfig.Get("test.key5"))
+
+	// Get default config
+	defaultConfig := DefaultConfig()
+
+	// Check merged config
+	assert.Equal([]string{"sys 1"}, defaultConfig.GetAll("test.key1"))
+	assert.Equal([]string{"sys 2", "user 2"}, defaultConfig.GetAll("test.key2"))
+	assert.Equal([]string{"sys 3", "user 3"}, defaultConfig.GetAll("test.key3"))
+	assert.Equal([]string{"user 4"}, defaultConfig.GetAll("test.key4"))
+	assert.Nil(defaultConfig.GetAll("test.key5"))
+
 }
 
 func TestSaveConfig(t *testing.T) {
