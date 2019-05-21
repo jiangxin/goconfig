@@ -526,6 +526,7 @@ func TestSaveConfig(t *testing.T) {
 	assert.Nil(exec.Command("git", "config", "-f", cfgFile, "--add", "ab.cd e.fg", "value 3").Run())
 	assert.Nil(exec.Command("git", "config", "-f", cfgFile, "--add", "ab.cd e.fg", "value 4").Run())
 	assert.Nil(exec.Command("git", "config", "-f", cfgFile, "ab.cd", "value has space ").Run())
+	assert.Nil(exec.Command("git", "config", "-f", cfgFile, "ab.empty", "").Run())
 
 	// Load cfgFile
 	cfg, err := Load(cfgFile)

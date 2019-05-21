@@ -453,7 +453,8 @@ func (v GitConfig) stringOfScope(scope scope) string {
 				}
 				line := "\t" + k + " = "
 				quote := false
-				if isspace(value.value[0]) || isspace(value.value[len(value.value)-1]) {
+				if len(value.value) > 0 &&
+					(isspace(value.value[0]) || isspace(value.value[len(value.value)-1])) {
 					quote = true
 				}
 				if quote {
