@@ -58,6 +58,34 @@ func TestParseSectionWithSpaces2(t *testing.T) {
 	assert.Equal("test", cfg.Get(`"remote.hello world.url"`))
 }
 
+func TestParseSectionWithDot(t *testing.T) {
+	assert := assert.New(t)
+
+	data := `[branch "develop/v2.5.0"]
+	remote = origin
+[branch "v1.0.0"]
+	remote = upstream`
+	cfg, _, err := Parse([]byte(data), "filename")
+	assert.Nil(err)
+	assert.Equal("upstream", cfg.Get("branch.v1.0.0.remote"))
+	assert.Equal("origin", cfg.Get("branch.develop/v2.5.0.remote"))
+	assert.Equal("origin", cfg.Get(`branch."develop/v2.5.0".remote`))
+}
+
+func TestParseSectionWithUppercase(t *testing.T) {
+	assert := assert.New(t)
+
+	data := `[branch "develop/V2.5.0"]
+	remote = origin
+[branch "V1.0.0"]
+	remote = upstream`
+	cfg, _, err := Parse([]byte(data), "filename")
+	assert.Nil(err)
+	assert.Equal("upstream", cfg.Get("branch.V1.0.0.remote"))
+	assert.Equal("origin", cfg.Get("branch.develop/V2.5.0.remote"))
+	assert.Equal("", cfg.Get("branch.v1.0.0.remote"))
+}
+
 func TestGetAll(t *testing.T) {
 	assert := assert.New(t)
 

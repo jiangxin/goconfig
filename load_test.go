@@ -521,17 +521,19 @@ func TestSaveConfig(t *testing.T) {
 	// Create system config
 	cfgFile := filepath.Join(tmpdir, "gitconfig")
 
-	assert.Nil(exec.Command("git", "config", "-f", cfgFile, "ab.cd.ef", "value-1").Run())
+	assert.Nil(exec.Command("git", "config", "-f", cfgFile, "ab.CD.ef", "value-1").Run())
 	assert.Nil(exec.Command("git", "config", "-f", cfgFile, "ab.cd e.fg", "value 2").Run())
 	assert.Nil(exec.Command("git", "config", "-f", cfgFile, "--add", "ab.cd e.fg", "value 3").Run())
 	assert.Nil(exec.Command("git", "config", "-f", cfgFile, "--add", "ab.cd e.fg", "value 4").Run())
-	assert.Nil(exec.Command("git", "config", "-f", cfgFile, "ab.cd", "value has space ").Run())
+	assert.Nil(exec.Command("git", "config", "-f", cfgFile, "ab.Cd", "value has space ").Run())
 	assert.Nil(exec.Command("git", "config", "-f", cfgFile, "ab.empty", "").Run())
 
 	// Load cfgFile
 	cfg, err := Load(cfgFile)
 	assert.Nil(err)
 	assert.Equal("value has space ", cfg.Get("ab.cd"))
+	assert.Equal("value-1", cfg.Get("ab.CD.ef"))
+	assert.Equal("", cfg.Get("ab.cd.ef"))
 
 	// Save file
 	newCfgFile := cfgFile + ".new"
@@ -544,4 +546,9 @@ func TestSaveConfig(t *testing.T) {
 	newCfg, err := Load(newCfgFile)
 	assert.Nil(err)
 	assert.Equal(cfg, newCfg)
+	assert.Equal("value-1", newCfg.Get("ab.CD.ef"))
+	assert.Equal("value-1", newCfg.Get("Ab.CD.Ef"))
+	assert.Equal("", newCfg.Get("ab.cd.ef"))
+	assert.Equal("value has space ", cfg.Get("ab.cd"))
+	assert.Equal("value has space ", cfg.Get("ab.cD"))
 }

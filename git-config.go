@@ -379,12 +379,13 @@ func dequoteKey(key string) string {
 
 // splitKey will split git config variable to section name and key
 func toSectionKey(name string) (string, string) {
-	name = strings.ToLower(dequoteKey(name))
+	name = dequoteKey(name)
 	items := strings.Split(name, ".")
-
 	if len(items) < 2 {
 		return "", ""
 	}
+	items[0] = strings.ToLower(items[0])
+	items[len(items)-1] = strings.ToLower(items[len(items)-1])
 	key := items[len(items)-1]
 	section := strings.Join(items[0:len(items)-1], ".")
 	return section, key
