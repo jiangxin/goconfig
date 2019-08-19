@@ -15,6 +15,7 @@ type cacheItem struct {
 	config   GitConfig
 	filename string
 	time     time.Time
+	size     int64
 }
 
 var (
@@ -23,19 +24,20 @@ var (
 
 func (v *cacheItem) uptodate() bool {
 	fi, err := os.Stat(v.filename)
-	if err == nil && fi.ModTime() == v.time {
+	if err == nil && fi.ModTime() == v.time && fi.Size() == v.size {
 		return true
 	}
 	return false
 }
 
 // set will cache cache entry
-func (v *cache) set(key string, cfg GitConfig, modTime time.Time) {
+func (v *cache) set(key string, cfg GitConfig, size int64, modTime time.Time) {
 	v.mu.Lock()
 	v.caches[key] = &cacheItem{
 		config:   cfg,
 		filename: key,
 		time:     modTime,
+		size:     size,
 	}
 	v.mu.Unlock()
 }

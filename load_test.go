@@ -179,7 +179,7 @@ func TestSystemConfig(t *testing.T) {
 	// sysconfig changed
 	err = ioutil.WriteFile(cfgFile,
 		[]byte(`[test]
-	foo = system foobar`),
+	foo = system bar`),
 		0644)
 	if err != nil {
 		panic(err)
@@ -192,6 +192,23 @@ func TestSystemConfig(t *testing.T) {
 	cfg, err = SystemConfig()
 	assert.NotNil(cfg)
 	assert.Equal("system foo", cfg.Get("test.foo"))
+
+	// file size changed
+	err = ioutil.WriteFile(cfgFile,
+		[]byte(`[test]
+	foo = system foobar`),
+		0644)
+	if err != nil {
+		panic(err)
+	}
+
+	// still set old file time, but file size changed
+	os.Chtimes(cfgFile, cacheTime, cacheTime)
+
+	// not using cache, because file size changed
+	cfg, err = SystemConfig()
+	assert.NotNil(cfg)
+	assert.Equal("system foobar", cfg.Get("test.foo"))
 
 	// change sysconfig again with new timestamp
 	err = ioutil.WriteFile(cfgFile,

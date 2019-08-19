@@ -58,7 +58,7 @@ func Load(name string) (GitConfig, error) {
 	}
 
 	// update cache
-	configCaches.set(name, cfg, fi.ModTime())
+	configCaches.set(name, cfg, fi.Size(), fi.ModTime())
 	return cfg, nil
 }
 
