@@ -111,27 +111,31 @@ func absJoin(dir, name string) (string, error) {
 
 // isGitDir test whether dir is a valid git dir
 func isGitDir(dir string) bool {
-	var (
-		err error
-		fi  os.FileInfo
-	)
-
-	objectDir := filepath.Join(dir, "objects", "pack")
-	if fi, err = os.Stat(objectDir); err != nil || !fi.IsDir() {
+	if !IsFile(filepath.Join(dir, "HEAD")) {
 		return false
 	}
 
-	refsDir := filepath.Join(dir, "refs")
-	if fi, err = os.Stat(refsDir); err != nil || !fi.IsDir() {
-		return false
+	commonDir := dir
+	if IsFile(filepath.Join(dir, "commondir")) {
+		f, err := os.Open(filepath.Join(dir, "commondir"))
+		if err == nil {
+			s := bufio.NewScanner(f)
+			if s.Scan() {
+				commonDir = s.Text()
+				if !filepath.IsAbs(commonDir) {
+					commonDir = filepath.Join(dir, commonDir)
+				}
+			}
+			f.Close()
+		}
 	}
 
-	cfgFile := filepath.Join(dir, "config")
-	if fi, err = os.Stat(cfgFile); err != nil || fi.IsDir() {
-		return false
+	if IsFile(filepath.Join(commonDir, "config")) &&
+		IsDir(filepath.Join(commonDir, "refs")) &&
+		IsDir(filepath.Join(commonDir, "objects")) {
+		return true
 	}
-
-	return true
+	return false
 }
 
 // findGitDir searches git dir
@@ -256,4 +260,30 @@ func setHome(home string) {
 	} else {
 		os.Setenv("HOME", home)
 	}
+}
+
+// Exist check if path is exist.
+func Exist(name string) bool {
+	if _, err := os.Stat(name); err == nil {
+		return true
+	}
+	return false
+}
+
+// IsFile returns true if path is exist and is a file.
+func IsFile(name string) bool {
+	fi, err := os.Stat(name)
+	if err != nil || fi.IsDir() {
+		return false
+	}
+	return true
+}
+
+// IsDir returns true if path is exist and is a directory.
+func IsDir(name string) bool {
+	fi, err := os.Stat(name)
+	if err != nil || !fi.IsDir() {
+		return false
+	}
+	return true
 }
